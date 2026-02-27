@@ -1,0 +1,46 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    padding: 20px;
+    background: #f4f4f9;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    min-width: 250px;
+}
+
+button {
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    margin: 10px;
+    transition: 0.3s;
+}
+
+#startButton {
+    background-color: #28a745;
+    color: white;
+}
+
+#stopButton {
+    background-color: #dc3545;
+    color: white;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.data {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
