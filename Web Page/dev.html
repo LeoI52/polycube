@@ -5,37 +5,49 @@
     <title>Polycube - Dev Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --accent: #fbbf24;
+            --success: #4ade80;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+        }
+
         body { 
-            background: #0f172a; 
-            color: #f1f5f9; 
+            background: var(--bg); 
+            color: var(--text); 
             font-family: 'Consolas', monospace; 
             padding: 20px; 
             margin: 0;
+            line-height: 1.5;
         }
         
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #1e293b;
+            border-bottom: 2px solid #334155;
             padding-bottom: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
-        h1 { color: #38bdf8; margin: 0; font-size: 1.5rem; }
+        h1 { color: var(--primary); margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
 
         .btn-kick {
-            background: #ef4444;
+            background: var(--danger);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 12px 24px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #991b1b;
         }
 
-        .btn-kick:hover { background: #dc2626; }
+        .btn-kick:active { transform: translateY(2px); box-shadow: 0 2px 0 #991b1b; }
 
         .grid { 
             display: grid; 
@@ -44,134 +56,184 @@
         }
 
         .card { 
-            background: #1e293b; 
-            border-radius: 8px; 
-            padding: 15px; 
+            background: var(--card); 
+            border-radius: 12px; 
+            padding: 20px; 
             border: 1px solid #334155; 
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
         }
+
+        .card.active { border-color: var(--primary); }
 
         .card-header { 
             font-weight: bold; 
-            color: #fbbf24; 
-            margin-bottom: 10px; 
+            color: var(--accent); 
+            margin-bottom: 15px; 
             display: flex; 
             justify-content: space-between; 
+            align-items: center;
             border-bottom: 1px solid #334155;
-            padding-bottom: 5px;
+            padding-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .btn-vibrate {
+            background: #334155;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-vibrate:hover {
+            background: var(--primary);
+            color: var(--bg);
         }
 
         .stat { 
-            margin: 5px 0; 
+            margin: 8px 0; 
             display: flex; 
             justify-content: space-between; 
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        .val { color: #4ade80; }
+        .label { color: #94a3b8; }
+        .val { color: var(--success); font-weight: bold; }
 
         .btn-status { 
-            padding: 2px 8px; 
+            padding: 2px 10px; 
             border-radius: 4px; 
-            font-size: 11px; 
+            font-size: 10px; 
             background: #334155; 
+            color: #64748b;
         }
         
-        .btn-status.active { background: #ef4444; color: white; }
+        .btn-status.on { background: var(--primary); color: var(--bg); }
 
         .sensor-group { 
-            margin-top: 10px; 
+            margin-top: 15px; 
             padding-top: 10px; 
             border-top: 1px solid #334155; 
         }
 
         .sensor-title { 
-            font-size: 0.75rem; 
-            color: #94a3b8; 
+            font-size: 0.7rem; 
+            color: #64748b; 
             display: block; 
-            margin-bottom: 5px; 
+            margin-bottom: 8px; 
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #no-devices {
+            grid-column: 1 / -1;
             text-align: center;
-            padding: 40px;
-            color: #64748b;
-            font-style: italic;
+            padding: 60px;
+            background: #1e293b55;
+            border: 2px dashed #334155;
+            border-radius: 20px;
+            color: #475569;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Polycube Console - Monitor</h1>
-        <button class="btn-kick" onclick="kickAll()">RÉINITIALISER TOUTES LES MANETTES</button>
+        <h1>POLYCUBE Console <span style="font-size: 0.8rem; opacity: 0.5;">v2.3</span></h1>
+        <button class="btn-kick" onclick="kickAll()">RÉINITIALISER TOUT</button>
     </header>
 
-    <div id="no-devices">Aucun contrôleur actif.</div>
-    <div class="grid" id="dashboard"></div>
+    <div class="grid" id="dashboard">
+        <div id="no-devices">En attente de connexion de manettes...</div>
+    </div>
 
     <script>
         const socket = io();
         const dashboard = document.getElementById('dashboard');
-        const noDevices = document.getElementById('no-devices');
 
-        // Action de Kick All
+        // Dès la connexion, on rejoint la room DEV pour recevoir les mises à jour
+        socket.on('connect', () => {
+            console.log("Connecté au serveur. Demande de rejoindre la room DEV...");
+            socket.emit('join_dev');
+        });
+
+        // Fonction pour envoyer un ordre de vibration à un téléphone spécifique
+        function vibrateDevice(id) {
+            console.log("Vibration demandée pour :", id);
+            socket.emit('vibrate_request', id);
+        }
+
+        // Fonction de réinitialisation globale
         function kickAll() {
-            if(confirm("Voulez-vous vraiment déconnecter et réinitialiser tous les utilisateurs ?")) {
+            if(confirm("Voulez-vous vraiment déconnecter tous les joueurs ?\nLeur téléphone sera rechargé sur l'écran d'accueil.")) {
                 socket.emit('kick_all');
+                // Nettoyage visuel immédiat
+                dashboard.innerHTML = '<div id="no-devices">Réinitialisation envoyée...</div>';
             }
         }
 
-        // Mise à jour de l'affichage des données
+        // Réception des données (uniquement envoyées à la room dev_room par le serveur)
         socket.on('update_dashboard', (controllers) => {
             const ids = Object.keys(controllers);
             
-            if (ids.length > 0) {
-                noDevices.style.display = 'none';
-            } else {
-                noDevices.style.display = 'block';
-                dashboard.innerHTML = '';
+            if (ids.length === 0) {
+                dashboard.innerHTML = '<div id="no-devices">En attente de connexion de manettes...</div>';
                 return;
             }
 
             dashboard.innerHTML = '';
 
-            ids.forEach(id => {
+            // On trie par ID (Joueur 1, 2, 3...)
+            ids.sort().forEach(id => {
                 const data = controllers[id];
                 const accel = data.sensors.accel || { x: 0, y: 0, z: 0 };
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'card active';
                 
                 card.innerHTML = `
                     <div class="card-header">
-                        <span>📱 ID: ${id}</span>
+                        <span>📱 ${id}</span>
+                        <button class="btn-vibrate" onclick="vibrateDevice('${id}')">VIBRER</button>
                     </div>
                     
                     <div class="stat">
-                        <span>Bouton H:</span>
-                        <span class="btn-status ${data.buttons.H ? 'active' : ''}">${data.buttons.H ? 'ON' : 'OFF'}</span>
+                        <span class="label">Bouton H (Action):</span>
+                        <span class="btn-status ${data.buttons.H ? 'on' : ''}">${data.buttons.H ? 'ENFONCÉ' : 'REPOS'}</span>
                     </div>
                     <div class="stat">
-                        <span>Bouton Pause:</span>
-                        <span class="btn-status ${data.buttons.Pause ? 'active' : ''}">${data.buttons.Pause ? 'ON' : 'OFF'}</span>
+                        <span class="label">Bouton Pause:</span>
+                        <span class="btn-status ${data.buttons.Pause ? 'on' : ''}">${data.buttons.Pause ? 'ENFONCÉ' : 'REPOS'}</span>
                     </div>
 
                     <div class="sensor-group">
-                        <span class="sensor-title">ORIENTATION (DEGRÉS)</span>
-                        <div class="stat"><span>Alpha:</span> <span class="val">${data.sensors.alpha}°</span></div>
-                        <div class="stat"><span>Beta:</span> <span class="val">${data.sensors.beta}°</span></div>
-                        <div class="stat"><span>Gamma:</span> <span class="val">${data.sensors.gamma}°</span></div>
+                        <span class="sensor-title">Orientation (Gyroscope)</span>
+                        <div class="stat"><span class="label">Z (Alpha):</span> <span class="val">${data.sensors.alpha}°</span></div>
+                        <div class="stat"><span class="label">X (Beta):</span> <span class="val">${data.sensors.beta}°</span></div>
+                        <div class="stat"><span class="label">Y (Gamma):</span> <span class="val">${data.sensors.gamma}°</span></div>
                     </div>
 
                     <div class="sensor-group">
-                        <span class="sensor-title">ACCÉLÉROMÈTRE (M/S²)</span>
-                        <div class="stat"><span>X:</span> <span class="val">${accel.x.toFixed(3)}</span></div>
-                        <div class="stat"><span>Y:</span> <span class="val">${accel.y.toFixed(3)}</span></div>
-                        <div class="stat"><span>Z:</span> <span class="val">${accel.z.toFixed(3)}</span></div>
+                        <span class="sensor-title">Accélération (Calibrée)</span>
+                        <div class="stat"><span class="label">Axe X:</span> <span class="val">${accel.x.toFixed(3)}</span></div>
+                        <div class="stat"><span class="label">Axe Y:</span> <span class="val">${accel.y.toFixed(3)}</span></div>
+                        <div class="stat"><span class="label">Axe Z:</span> <span class="val">${accel.z.toFixed(3)}</span></div>
+                    </div>
+
+                    <div style="font-size: 0.6rem; color: #475569; margin-top: 15px; border-top: 1px solid #334155; padding-top: 5px; text-align: right;">
+                        ID Session: ${data.sid ? data.sid.substring(0,10) : 'N/A'}
                     </div>
                 `;
                 dashboard.appendChild(card);
             });
+        });
+
+        socket.on('disconnect', () => {
+            console.warn("Connexion au serveur perdue.");
         });
     </script>
 </body>
