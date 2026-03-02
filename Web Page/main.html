@@ -7,24 +7,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accéléromètre Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 
 </head>
 
 <body>
-
-    <div class="card">
-        <h1>Accéléromètre</h1>
-        <button id="startButton">Démarrer</button>
-        <button id="stopButton" disabled>Arrêter</button>
-
-        <p id="status">Statut : En attente</p>
-        <hr>
-        <p>X: <span id="x" class="data">0.00</span> m/s²</p>
-        <p>Y: <span id="y" class="data">0.00</span> m/s²</p>
-        <p>Z: <span id="z" class="data">0.00</span> m/s²</p>
+    <div class="status-bar">
+        <div class="status" id="connection-status">Connexion au Raspberry Pi...</div>
+        <div id="debug">Capteurs : Inactifs</div>
     </div>
 
+    <div class="controls-container">
+        <!-- Bouton H -->
+        <div class="btn" id="btn-H">H</div>
+        <!-- Bouton Pause -->
+        <div class="btn" id="btn-Pause">Pause</div>
+    </div>
 
+    <!-- Nécessaire pour les navigateurs mobiles (iOS/Android récents) -->
+    <button id="request-perms">Autoriser les capteurs</button>
 </body>
 
 </html>

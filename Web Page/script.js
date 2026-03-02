@@ -1,63 +1,116 @@
+const socket = io();
+        const statusEl = document.getElementById('connection-status');
+        const debugEl = document.getElementById('debug');
+        const btnPerms = document.getElementById('request-perms');
 
-let socket;
-let deviceId = 'phone_' + Math.random().toString(36).substr(2, 5);
-const statusEl = document.getElementById('status');
+        // État de la manette mis à jour avec H et Pause
+        let controllerState = {
+            id: Math.random().toString(36).substring(7),
+            buttons: { 
+                H: false, 
+                Pause: false 
+            },
+            sensors: { 
+                alpha: 0, 
+                beta: 0, 
+                gamma: 0 
+            }
+        };
 
-// Fonction de capture séparée pour pouvoir l'arrêter proprement
-function handleMotion(e) {
-    const acc = e.accelerationIncludingGravity;
-    if (!acc) return;
+        // Gestion de la connexion Socket.io
+        socket.on('connect', () => {
+            statusEl.innerText = "● Connecté au Raspberry Pi";
+            statusEl.style.color = "#2ecc71";
+        });
 
-    document.getElementById('x').textContent = acc.x.toFixed(2);
-    document.getElementById('y').textContent = acc.y.toFixed(2);
-    document.getElementById('z').textContent = acc.z.toFixed(2);
+        socket.on('disconnect', () => {
+            statusEl.innerText = "○ Déconnecté";
+            statusEl.style.color = "#e74c3c";
+        });
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-            id: deviceId,
-            x: acc.x, y: acc.y, z: acc.z,
-            ts: Date.now()
-        }));
-    }
-}
+        /**
+         * Configure les événements tactiles pour un bouton
+         */
+        function setupButton(id, key) {
+            const el = document.getElementById(id);
+            
+            const updateState = (isActive) => {
+                controllerState.buttons[key] = isActive;
+                el.classList.toggle('active', isActive);
+                sendData();
+            };
 
-async function requestPermission() {
-    // Cas spécifique pour iOS 13+
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        try {
-            const permissionState = await DeviceMotionEvent.requestPermission();
-            return permissionState === 'granted';
-        } catch (error) {
-            console.error(error);
-            return false;
+            // Touch Events (Mobile)
+            el.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                updateState(true); 
+            });
+            el.addEventListener('touchend', (e) => { 
+                e.preventDefault(); 
+                updateState(false); 
+            });
+
+            // Mouse Events (Fallback Desktop pour test)
+            el.addEventListener('mousedown', () => updateState(true));
+            el.addEventListener('mouseup', () => updateState(false));
         }
-    }
-    // Pour les autres navigateurs (Android), on suppose que c'est OK si l'API existe
-    return true;
-}
 
-document.getElementById('startButton').addEventListener('click', async () => {
-    const isAllowed = await requestPermission();
+        // Initialisation des nouveaux boutons
+        setupButton('btn-H', 'H');
+        setupButton('btn-Pause', 'Pause');
 
-    if (isAllowed) {
-        // WebSocket - remplacez par votre IP locale (ex: ws://192.168.1.15:8765)
-        socket = new WebSocket("ws://VOTRE_IP_LOCALE:8765");
+        /**
+         * Capture les données d'orientation du téléphone
+         */
+        function handleOrientation(event) {
+            // alpha: boussole, beta: avant/arrière, gamma: gauche/droite
+            controllerState.sensors.alpha = Math.round(event.alpha || 0);
+            controllerState.sensors.beta = Math.round(event.beta || 0);
+            controllerState.sensors.gamma = Math.round(event.gamma || 0);
+            
+            debugEl.innerHTML = `Boussole: ${controllerState.sensors.alpha}° | Incl: ${controllerState.sensors.beta}°, ${controllerState.sensors.gamma}°`;
+            sendData();
+        }
 
-        window.addEventListener('devicemotion', handleMotion);
+        /**
+         * Envoie les données au serveur avec limitation de fréquence (Throttling)
+         */
+        let lastSendTime = 0;
+        const SEND_INTERVAL = 30; // ms (environ 33 FPS)
 
-        statusEl.textContent = "Statut : Connecté & Capture...";
-        document.getElementById('startButton').disabled = true;
-        document.getElementById('stopButton').disabled = false;
-    } else {
-        alert("Permission refusée ou non supportée.");
-    }
-});
+        function sendData() {
+            const now = Date.now();
+            if (now - lastSendTime > SEND_INTERVAL) {
+                socket.emit('controller_data', controllerState);
+                lastSendTime = now;
+            }
+        }
 
-document.getElementById('stopButton').addEventListener('click', () => {
-    window.removeEventListener('devicemotion', handleMotion);
-    if (socket) socket.close();
+        /**
+         * Gestion des permissions pour l'accéléromètre/gyroscope
+         */
+        btnPerms.onclick = () => {
+            // Vérification si l'API de permission existe (iOS)
+            if (typeof DeviceOrientationEvent !== 'undefined' && 
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            activateSensors();
+                        } else {
+                            alert("Permission refusée pour les capteurs.");
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Pour les appareils Android ou navigateurs n'exigeant pas de permission explicite
+                activateSensors();
+            }
+        };
 
-    statusEl.textContent = "Statut : Arrêté";
-    document.getElementById('startButton').disabled = false;
-    document.getElementById('stopButton').disabled = true;
-});
+        function activateSensors() {
+            window.addEventListener('deviceorientation', handleOrientation);
+            btnPerms.style.display = 'none';
+            debugEl.innerText = "Capteurs : Activés";
+        }

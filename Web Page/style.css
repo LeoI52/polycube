@@ -1,46 +1,93 @@
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
-    padding: 20px;
-    background: #f4f4f9;
-}
+            margin: 0;
+            background: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Empêche le scroll et le zoom */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            height: 100vh;
+        }
 
-.card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: inline-block;
-    min-width: 250px;
-}
+        .status-bar {
+            width: 100%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
 
-button {
-    padding: 12px 24px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    margin: 10px;
-    transition: 0.3s;
-}
+        .status {
+            font-size: 14px;
+            font-weight: bold;
+            color: #888;
+        }
 
-#startButton {
-    background-color: #28a745;
-    color: white;
-}
+        #debug {
+            font-family: monospace;
+            font-size: 11px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 5px;
+            width: 80%;
+            text-align: center;
+            border: 1px solid #333;
+        }
 
-#stopButton {
-    background-color: #dc3545;
-    color: white;
-}
+        .controls-container {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+        }
 
-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
+        .btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 6px #111;
+            transition: transform 0.05s, box-shadow 0.05s;
+            border: 2px solid #444;
+        }
 
-.data {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #333;
-}
+        /* Style spécifique pour le bouton Pause (souvent plus rectangulaire ou différent) */
+        #btn-Pause {
+            background: #c0392b; /* Rouge pour pause */
+            border-color: #e74c3c;
+        }
+
+        #btn-H {
+            background: #2980b9; /* Bleu pour H */
+            border-color: #3498db;
+        }
+
+        .btn:active {
+            box-shadow: 0 2px #111;
+            transform: translateY(4px);
+        }
+
+        .btn.active {
+            filter: brightness(1.3);
+        }
+
+        #request-perms {
+            padding: 12px 24px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
