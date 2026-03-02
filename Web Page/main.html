@@ -4,23 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Polycube Controller</title>
+    <!-- Chargement de Socket.io -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Lien vers le fichier CSS externe -->
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <!-- Écran d'accueil pour l'ID et les permissions -->
+    <!-- Ecran de Lobby : Sélection du joueur -->
     <div id="lobby">
         <div class="lobby-content">
-            <h1 id="display-id">ID: GEN...</h1>
-            <p>Prêt pour la partie ?</p>
-            <button id="btn-join">REJOINDRE</button>
+            <h1>POLYCUBE</h1>
+            <p>Choisissez votre numéro de joueur :</p>
+            <div class="slot-grid">
+                <button class="slot-btn available" id="slot-1" onclick="selectSlot(1)">JOUEUR 1</button>
+                <button class="slot-btn available" id="slot-2" onclick="selectSlot(2)">JOUEUR 2</button>
+                <button class="slot-btn available" id="slot-3" onclick="selectSlot(3)">JOUEUR 3</button>
+                <button class="slot-btn available" id="slot-4" onclick="selectSlot(4)">JOUEUR 4</button>
+            </div>
+            <div id="lobby-status">Prêt pour la connexion...</div>
         </div>
+        <!-- Bouton de test discret -->
+        <button id="btn-test">MODE TEST (ID ALÉATOIRE)</button>
     </div>
 
-    <!-- Interface de jeu (cachée au début) -->
+    <!-- Interface Manette (masquée par défaut par le lobby) -->
     <div class="status-bar">
         <div class="status" id="connection-status">Connexion au serveur...</div>
-        <div id="debug">Capteurs : Inactifs</div>
+        <div id="debug">Capteurs : En attente...</div>
     </div>
 
     <div class="controls-container">
@@ -28,6 +38,7 @@
         <div class="btn" id="btn-Pause">Pause</div>
     </div>
 
+    <!-- Lien vers le fichier JavaScript externe -->
     <script src="/script.js"></script>
 </body>
 </html>

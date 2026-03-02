@@ -1,79 +1,159 @@
+/* Reset et Configuration de base */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
 body {
     margin: 0;
-    background: #121212;
-    color: #e0e0e0;
+    background: #0f172a; /* Thème Bleu Nuit Polycube */
+    color: #f1f5f9;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    touch-action: none;
-    overflow: hidden;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
-    height: 100vh;
+    overflow: hidden;
+    touch-action: none;
 }
 
-/* Style de l'écran d'accueil */
+/* --- LOBBY ET SELECTION --- */
 #lobby {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: #1a1a1a;
-    z-index: 100;
+    background: #0f172a;
+    z-index: 1000;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
+    padding: 20px;
 }
 
 .lobby-content h1 {
-    color: #3b82f6;
+    color: #38bdf8;
     font-size: 2.5rem;
+    letter-spacing: 5px;
     margin-bottom: 10px;
 }
 
-#btn-join {
-    padding: 20px 50px;
-    font-size: 1.5rem;
+.slot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    width: 100%;
+    max-width: 450px;
+    margin: 20px 0;
+}
+
+.slot-btn {
+    padding: 25px 15px;
+    font-size: 1.1rem;
     font-weight: bold;
-    border-radius: 50px;
-    border: none;
-    background: #4ade80;
-    color: #064e3b;
-    box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+    border-radius: 12px;
+    border: 2px solid #1e293b;
+    background: #1e293b;
+    color: #f1f5f9;
     cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
 }
 
-/* Interface Manette */
-.status-bar { text-align: center; margin-top: 20px; }
+.slot-btn.available {
+    border-color: #334155;
+    color: #38bdf8;
+}
+
+.slot-btn.available:active {
+    transform: scale(0.95);
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+.slot-btn.taken {
+    opacity: 0.3;
+    background: #000;
+    border-color: #ef4444;
+    color: #ef4444;
+    pointer-events: none; /* Désactive le clic */
+}
+
+#lobby-status {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+/* --- BOUTON TEST --- */
+#btn-test {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 9px;
+    background: rgba(30, 41, 59, 0.4);
+    color: #475569;
+    border: 1px solid #1e293b;
+    padding: 5px 10px;
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+/* --- INTERFACE DE JEU --- */
+.status-bar {
+    text-align: center;
+}
+
+.status {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #64748b;
+}
+
 #debug {
-    font-family: monospace;
-    font-size: 0.8rem;
-    background: #1e1e1e;
-    padding: 10px;
-    border-radius: 8px;
     margin-top: 10px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    background: #1e293b;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+    color: #38bdf8;
 }
 
-.controls-container { display: flex; gap: 40px; }
+.controls-container {
+    display: flex;
+    gap: 40px;
+}
 
 .btn {
-    width: 110px; height: 110px;
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
     display: flex;
-    align-items: center; justify-content: center;
-    font-weight: bold; font-size: 1.2rem;
-    user-select: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1.3rem;
     box-shadow: 0 8px 0 #000;
-    transition: all 0.05s;
-    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.05s, box-shadow 0.05s;
+    user-select: none;
 }
 
-#btn-H { background: #2563eb; border: 3px solid #3b82f6; }
-#btn-Pause { background: #dc2626; border: 3px solid #ef4444; }
+#btn-H {
+    background: #2563eb;
+    border: 3px solid #3b82f6;
+}
+
+#btn-Pause {
+    background: #dc2626;
+    border: 3px solid #ef4444;
+}
 
 .btn:active {
     transform: translateY(4px);
     box-shadow: 0 4px 0 #000;
 }
 
-.btn.active { filter: brightness(1.4); }
+.btn.active {
+    filter: brightness(1.5);
+}

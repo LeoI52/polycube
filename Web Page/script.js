@@ -1,16 +1,13 @@
 const socket = io();
 const lobby = document.getElementById('lobby');
-const btnJoin = document.getElementById('btn-join');
-const displayId = document.getElementById('display-id');
+const btnTest = document.getElementById('btn-test');
 const statusEl = document.getElementById('connection-status');
 const debugEl = document.getElementById('debug');
+const lobbyStatus = document.getElementById('lobby-status');
 
-// 1. Génération de l'ID unique
-const myId = "CTRL-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-displayId.innerText = "ID: " + myId;
-
+// État initial de la manette
 let controllerState = {
-    id: myId,
+    id: null,
     buttons: { H: false, Pause: false },
     sensors: { 
         alpha: 0, beta: 0, gamma: 0, 
@@ -18,66 +15,71 @@ let controllerState = {
     }
 };
 
-socket.on('connect', () => {
-    statusEl.innerText = "● Connecté au Serveur";
-    statusEl.style.color = "#4ade80";
+// --- GESTION DES SLOTS (1-4) ---
+
+// Mise à jour visuelle des boutons de slots selon l'occupation
+socket.on('slots_update', (slots) => {
+    for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`slot-${i}`);
+        if (slots[i]) {
+            btn.classList.replace('available', 'taken');
+            btn.innerText = "OCCUPÉ";
+        } else {
+            btn.classList.replace('taken', 'available');
+            btn.innerText = `JOUEUR ${i}`;
+        }
+    }
 });
 
-// 2. Gestion des boutons physiques de l'interface
-function setupButton(id, key) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    
-    const update = (state) => {
-        controllerState.buttons[key] = state;
-        el.classList.toggle('active', state);
-        sendData();
-    };
-    
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); update(true); });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); update(false); });
-    // Support souris pour le test sur PC
-    el.addEventListener('mousedown', () => update(true));
-    el.addEventListener('mouseup', () => update(false));
-}
+// Envoi de la demande de slot au serveur
+window.selectSlot = (num) => {
+    lobbyStatus.innerText = `Demande du slot ${num}...`;
+    socket.emit('select_slot', num);
+};
 
-setupButton('btn-H', 'H');
-setupButton('btn-Pause', 'Pause');
+// Confirmation du slot par le serveur
+socket.on('slot_confirmed', (data) => {
+    controllerState.id = `JOUEUR-${data.slot}`;
+    requestDevicePermissions();
+});
 
-// 3. Gestion des Permissions (La partie critique pour iOS/Android)
+// Refus du slot
+socket.on('slot_denied', (data) => {
+    alert(data.message);
+    lobbyStatus.innerText = "Sélectionnez un autre slot.";
+});
+
+// Réception du signal de Kick (Reset) depuis la page Dev
+socket.on('force_reset', () => {
+    window.location.reload(); 
+});
+
+// --- MODE TEST ---
+btnTest.onclick = () => {
+    controllerState.id = "TEST-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+    requestDevicePermissions();
+};
+
+// --- PERMISSIONS ET CAPTEURS ---
+
 async function requestDevicePermissions() {
     try {
-        // Test iOS 13+ pour l'Orientation
+        // Demande de permission iOS (nécessite HTTPS)
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const status = await DeviceOrientationEvent.requestPermission();
-            if (status !== 'granted') {
-                alert("Permission d'orientation refusée.");
-            }
+            await DeviceOrientationEvent.requestPermission();
+            await DeviceMotionEvent.requestPermission();
         }
-        
-        // Test iOS 13+ pour le Mouvement (Accéléromètre)
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-            const status = await DeviceMotionEvent.requestPermission();
-            if (status !== 'granted') {
-                alert("Permission de mouvement refusée.");
-            }
-        }
-
-        // Si on arrive ici, on tente de démarrer les capteurs
         startSensors();
-    } catch (error) {
-        console.error(error);
-        alert("Erreur lors de la demande de capteurs. Vérifiez que vous êtes en HTTPS ou que les drapeaux de sécurité sont configurés.");
-        // On force quand même l'entrée dans la manette pour tester les boutons
-        startSensors();
+    } catch (e) {
+        console.warn("Permissions capteurs échouées, démarrage forcé :", e);
+        startSensors(); // On démarre quand même pour les boutons
     }
 }
 
 function startSensors() {
-    lobby.style.display = 'none';
-    debugEl.innerText = "Capteurs : Initialisation...";
-
-    // Écouteur Orientation
+    lobby.style.display = 'none'; // On cache le menu de sélection
+    
+    // Écouteur Orientation (Degrés)
     window.addEventListener('deviceorientation', (event) => {
         controllerState.sensors.alpha = Math.round(event.alpha || 0);
         controllerState.sensors.beta = Math.round(event.beta || 0);
@@ -85,39 +87,59 @@ function startSensors() {
         sendData();
     }, true);
 
-    // Écouteur Accéléromètre (Valeurs Brutes)
+    // Écouteur Mouvement (Valeurs brutes m/s²)
     window.addEventListener('devicemotion', (event) => {
         if (event.accelerationIncludingGravity) {
-            // Utilisation des valeurs brutes en m/s²
             controllerState.sensors.accel.x = event.accelerationIncludingGravity.x;
             controllerState.sensors.accel.y = event.accelerationIncludingGravity.y;
             controllerState.sensors.accel.z = event.accelerationIncludingGravity.z;
             
-            // Affichage en m/s² dans l'interface de debug
-            debugEl.innerText = `X: ${controllerState.sensors.accel.x.toFixed(2)} m/s² | Y: ${controllerState.sensors.accel.y.toFixed(2)} m/s²`;
+            debugEl.innerText = `Brut X: ${controllerState.sensors.accel.x.toFixed(2)} | Y: ${controllerState.sensors.accel.y.toFixed(2)}`;
             sendData();
         }
     }, true);
-    
-    // Si après 1 seconde rien ne bouge, on prévient l'utilisateur
-    setTimeout(() => {
-        if (controllerState.sensors.alpha === 0 && (controllerState.sensors.accel.x === 0 || controllerState.sensors.accel.x === null)) {
-            debugEl.innerText = "Capteurs : Inactifs (Vérifiez HTTPS / Flags)";
-            debugEl.style.color = "#f87171";
-        }
-    }, 1000);
 }
 
-btnJoin.onclick = () => {
-    requestDevicePermissions();
-};
+// --- BOUTONS ET TRANSMISSION ---
 
-// 4. Envoi des données vers le Raspberry Pi
+function setupButton(id, key) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const update = (state) => {
+        controllerState.buttons[key] = state;
+        el.classList.toggle('active', state);
+        sendData();
+    };
+
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); update(true); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); update(false); });
+    el.addEventListener('mousedown', () => update(true));
+    el.addEventListener('mouseup', () => update(false));
+}
+
+setupButton('btn-H', 'H');
+setupButton('btn-Pause', 'Pause');
+
 let lastSend = 0;
 function sendData() {
+    if (!controllerState.id) return;
     const now = Date.now();
-    if (now - lastSend > 30) { // Max ~33 FPS
+    if (now - lastSend > 30) { // Environ 33 FPS
         socket.emit('controller_data', controllerState);
         lastSend = now;
     }
 }
+
+socket.on('vibrate', (data) => {
+    if (navigator.vibrate) {
+        navigator.vibrate(data.duration || 50);
+    }
+});
+
+
+// Statut de connexion socket
+socket.on('connect', () => {
+    statusEl.innerText = "● Serveur Connecté";
+    statusEl.style.color = "#4ade80";
+});
