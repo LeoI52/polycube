@@ -1,31 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accéléromètre Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Polycube Controller</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-
+    <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
+    <!-- Écran d'accueil pour l'ID et les permissions -->
+    <div id="lobby">
+        <div class="lobby-content">
+            <h1 id="display-id">ID: GEN...</h1>
+            <p>Prêt pour la partie ?</p>
+            <button id="btn-join">REJOINDRE</button>
+        </div>
+    </div>
+
+    <!-- Interface de jeu (cachée au début) -->
     <div class="status-bar">
-        <div class="status" id="connection-status">Connexion au Raspberry Pi...</div>
+        <div class="status" id="connection-status">Connexion au serveur...</div>
         <div id="debug">Capteurs : Inactifs</div>
     </div>
 
     <div class="controls-container">
-        <!-- Bouton H -->
         <div class="btn" id="btn-H">H</div>
-        <!-- Bouton Pause -->
         <div class="btn" id="btn-Pause">Pause</div>
     </div>
 
-    <!-- Nécessaire pour les navigateurs mobiles (iOS/Android récents) -->
-    <button id="request-perms">Autoriser les capteurs</button>
+    <script src="/script.js"></script>
 </body>
-
 </html>

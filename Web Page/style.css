@@ -1,93 +1,79 @@
 body {
-            margin: 0;
-            background: #1a1a1a;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            touch-action: none; /* Empêche le scroll et le zoom */
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-around;
-            height: 100vh;
-        }
+    margin: 0;
+    background: #121212;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    touch-action: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    height: 100vh;
+}
 
-        .status-bar {
-            width: 100%;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
+/* Style de l'écran d'accueil */
+#lobby {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #1a1a1a;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
 
-        .status {
-            font-size: 14px;
-            font-weight: bold;
-            color: #888;
-        }
+.lobby-content h1 {
+    color: #3b82f6;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
 
-        #debug {
-            font-family: monospace;
-            font-size: 11px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 8px;
-            border-radius: 5px;
-            width: 80%;
-            text-align: center;
-            border: 1px solid #333;
-        }
+#btn-join {
+    padding: 20px 50px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 50px;
+    border: none;
+    background: #4ade80;
+    color: #064e3b;
+    box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+    cursor: pointer;
+}
 
-        .controls-container {
-            display: flex;
-            gap: 40px;
-            align-items: center;
-            justify-content: center;
-        }
+/* Interface Manette */
+.status-bar { text-align: center; margin-top: 20px; }
+#debug {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
 
-        .btn {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 6px #111;
-            transition: transform 0.05s, box-shadow 0.05s;
-            border: 2px solid #444;
-        }
+.controls-container { display: flex; gap: 40px; }
 
-        /* Style spécifique pour le bouton Pause (souvent plus rectangulaire ou différent) */
-        #btn-Pause {
-            background: #c0392b; /* Rouge pour pause */
-            border-color: #e74c3c;
-        }
+.btn {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1.2rem;
+    user-select: none;
+    box-shadow: 0 8px 0 #000;
+    transition: all 0.05s;
+    -webkit-tap-highlight-color: transparent;
+}
 
-        #btn-H {
-            background: #2980b9; /* Bleu pour H */
-            border-color: #3498db;
-        }
+#btn-H { background: #2563eb; border: 3px solid #3b82f6; }
+#btn-Pause { background: #dc2626; border: 3px solid #ef4444; }
 
-        .btn:active {
-            box-shadow: 0 2px #111;
-            transform: translateY(4px);
-        }
+.btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 #000;
+}
 
-        .btn.active {
-            filter: brightness(1.3);
-        }
-
-        #request-perms {
-            padding: 12px 24px;
-            background: #444;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }
+.btn.active { filter: brightness(1.4); }
