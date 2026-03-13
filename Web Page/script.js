@@ -87,7 +87,7 @@ async function startCalibrationFlow() {
     } catch (e) { console.error(e); }
 
     initSensorsListeners();
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 3000));
     
     isCalibrating = true;
     let samples = [];
