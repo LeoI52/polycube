@@ -67,7 +67,7 @@ class Game:
             Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "PolyCube - Séléction de jeu", self.update_level_selection, self.draw_level_selection, "assets/assets.pyxres", PALETTE),
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 1)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 1, mouse=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 20, 6, FONT_DEFAULT, 2, CENTER)
@@ -93,9 +93,16 @@ class Game:
         self.title.draw()
 
     def update_level_selection(self):
-        self.button_manager.update()
+        active_controllers = server.controllers.copy()
+        p1_id = None
+
+        if active_controllers:
+            p1_id = next((id for id in active_controllers if "JOUEUR-1" in id), list(active_controllers.keys())[0])
+            p1_data = active_controllers[p1_id]
+            self.button_manager.update(p1_data)
 
     def draw_level_selection(self):
+        pyxel.cls(0)
         self.button_manager.draw()
 
 #? ---------- MAIN ---------- ?#
