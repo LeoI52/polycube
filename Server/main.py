@@ -25,21 +25,24 @@ class ButtonManager:
         self.selected_button = 0
         self.buttons = buttons
         self.links = links
+        self.last_move_time = 0
 
     def update(self, ctrl_data:dict):
         for id, button in self.buttons.items():
             button.update()
             if self.selected_button == id and ctrl_data['buttons']['H']:
                 button.on_click()
-
-        if ctrl_data['sensors']['accel']['y'] < -4 and self.links[self.selected_button][0] is not None:
-            self.selected_button = self.links[self.selected_button][0]
-        elif ctrl_data['sensors']['accel']['y'] > 4 and self.links[self.selected_button][1] is not None:
-            self.selected_button = self.links[self.selected_button][1]
-        elif ctrl_data['sensors']['accel']['x'] > 4 and self.links[self.selected_button][2] is not None:
-            self.selected_button = self.links[self.selected_button][2]
-        elif ctrl_data['sensors']['accel']['x'] < -4 and self.links[self.selected_button][3] is not None:
-            self.selected_button = self.links[self.selected_button][3]
+                
+        if pyxel.frame_count - self.last_move_time > 300:
+            if ctrl_data['sensors']['accel']['y'] < -4 and self.links[self.selected_button][0] is not None:
+                self.selected_button = self.links[self.selected_button][0]
+            elif ctrl_data['sensors']['accel']['y'] > 4 and self.links[self.selected_button][1] is not None:
+                self.selected_button = self.links[self.selected_button][1]
+            elif ctrl_data['sensors']['accel']['x'] > 4 and self.links[self.selected_button][2] is not None:
+                self.selected_button = self.links[self.selected_button][2]
+            elif ctrl_data['sensors']['accel']['x'] < -4 and self.links[self.selected_button][3] is not None:
+                self.selected_button = self.links[self.selected_button][3]
+            self.last_move_time = pyxel.frame_count
 
     def draw(self):
         for id, button in self.buttons.items():
