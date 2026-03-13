@@ -109,17 +109,17 @@ def start_server():
     if os.path.exists(cert_file) and os.path.exists(key_file):
         try:
             print("Démarrage avec Eventlet (Production)...")
-            socketio.run(app, host='0.0.0.0', port=5000, 
+            socketio.run(app, host='0.0.0.0', port=4000, 
                          certfile=cert_file, keyfile=key_file, 
                          debug=False, use_reloader=False)
         except TypeError:
             print("Démarrage avec Werkzeug (Développement)...")
-            socketio.run(app, host='0.0.0.0', port=5000, 
+            socketio.run(app, host='0.0.0.0', port=4000, 
                          ssl_context=(cert_file, key_file), 
                          debug=False, use_reloader=False)
     else:
         print("Mode HTTP simple...")
-        socketio.run(app, host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+        socketio.run(app, host='0.0.0.0', port=4000, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
     start_server()
