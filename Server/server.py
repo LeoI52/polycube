@@ -103,8 +103,8 @@ def handle_disconnect():
             break
 
 def start_server():
-    cert_file = os.path.join(os.path.dirname(__file__), "cert.pem")
-    key_file = os.path.join(os.path.dirname(__file__), "key.pem")
+    cert_file = os.path.join(os.path.dirname(__file__), "SSL/cert.pem")
+    key_file = os.path.join(os.path.dirname(__file__), "SSL/key.pem")
 
     if os.path.exists(cert_file) and os.path.exists(key_file):
         try:
