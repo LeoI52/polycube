@@ -10,6 +10,13 @@ from utils import *
 import threading
 import server
 
+#? ---------- CONSTANTS ---------- ?#
+
+PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff, 0x5ee9e9, 
+           0x2890dc, 0x1831a7, 0x053239, 0x005f41, 0x08b23b, 0x47f641, 0xe8ff75, 0xfbbe82, 
+           0xde9751, 0xb66831, 0x8a4926, 0x461c14, 0x1e090d, 0x720d0d, 0x813704, 0xda2424, 
+           0xef6e10, 0xecab11, 0xece910, 0xf78d8d, 0xf94e6d, 0xc12458, 0x841252, 0x3d083b, 0x000000]
+
 #? ---------- FUNCTIONS ---------- ?#
 
 def vibrate_controller(ctrl_id, duration=50):
@@ -28,7 +35,8 @@ class Game:
 
         #? Pyxel Init
         scenes = [
-            Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets.pyxres")
+            Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
+            Scene(1, "PolyCube - Séléction de jeu", self.update_level_selection, self.draw_level_selection, "assets/assets.pyxres", PALETTE),
         ]
         self.pyxel_manager = PyxelManager(228, 128, scenes)
 
@@ -62,7 +70,13 @@ class Game:
     def draw_main_menu(self):
         pyxel.cls(0)
 
-        pyxel.text(pyxel.width // 2, 80, "POLYCUBE SYSTEM", 7)
+        pyxel.text(pyxel.width // 2, 80, "POLYCUBE SYSTEM", 6)
+
+    def update_level_selection(self):
+        pass
+
+    def draw_level_selection(self):
+        pass
 
 #? ---------- MAIN ---------- ?#
 if __name__ == "__main__":
