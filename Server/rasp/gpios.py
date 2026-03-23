@@ -4,17 +4,17 @@ import os
 from gpiozero import LED, Button
 
 
-l1 = # led for player 1 
-l2 = # led for player 2 
-l3 = # led for player 3 
-l4 = # led for player 4 
+l1 = 18 # led for player 1 
+l2 = 23 # led for player 2 
+l3 = 24 # led for player 3 
+l4 = 25 # led for player 4 
 
 
 class GameHardware:
     def __init__(self):
         # 1. Standard LEDs (GPIO Pins 18, 23, 24, 25)
         # These can represent Health, Ammo, Level, etc.
-        self.leds = [LED(18), LED(23), LED(24), LED(25)]
+        self.leds = [LED(l1), LED(l2), LED(l3), LED(l4)]
         
         # 2. Reset Switch (GPIO Pin 17)
         # Using internal pull-up: Button connects to Pin 17 and GND
