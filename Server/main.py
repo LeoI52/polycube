@@ -25,7 +25,7 @@ class ButtonManager:
         self.buttons = buttons
         self.selected_index = 0
         self.last_move_time = 0
-        self.move_cooldown = 60
+        self.move_cooldown = 45
 
     def get_player1(self):
         if not server.controllers:
@@ -36,7 +36,11 @@ class ButtonManager:
 
     def update(self):
         p1_id, p1_data = self.get_player1()
+        
+        #! ---------- A ENLEVER SUR LA VERSION FINALE
         self.buttons[self.selected_index].update()
+        #! ----------
+
         if not p1_data or not self.buttons:
             return
 
@@ -102,7 +106,7 @@ class Game:
 
     def saka_act(self):
         print("saka")
-        self.pyxel_manager.change_scene_transition(TransitionOuterCircle(1, 2, 6))
+        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 1, 8, 6))
 
     def update_main_menu(self):
         self.title.update()
@@ -118,7 +122,7 @@ class Game:
         pass
 
     def draw_saka(self):
-        pyxel.cls(random.randint(0,15))
+        pyxel.cls(0)
 
 #? ---------- MAIN ---------- ?#
 
