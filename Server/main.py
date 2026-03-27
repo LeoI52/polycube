@@ -45,7 +45,7 @@ class ButtonManager:
             return
 
         accel_x = p1_data['sensors']['accel']['x']
-        btn_h = p1_data['buttons']['H']
+        btn_h = p1_data['buttons']['Press']
 
         if pyxel.frame_count - self.last_move_time > self.move_cooldown:
             if accel_x > 4:
