@@ -2,7 +2,7 @@ from gpiozero import OutputDevice
 import time
 
 class GroveChainableLED:
-    def _init_(self, clk_pin, data_pin, num_leds=1):
+    def __init__(self, clk_pin, data_pin, num_leds=1):
         self.clk = OutputDevice(clk_pin)
         self.data = OutputDevice(data_pin)
         self.num_leds = num_leds

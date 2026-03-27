@@ -89,8 +89,9 @@ class Game:
         self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
 
         self.main_menu_buttons = [
-            Button("Saka", 140, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=CENTER, on_click=lambda : print("go to saka")),
-            Button("Pong", 140, 110, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=CENTER, on_click=lambda : print("go to pong")),
+            Button("Saka", 50, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=lambda : print("go to saka")),
+            Button("Pong", 50, 156, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT, on_click=lambda : print("go to pong")),
+            Button("Far West", 50, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=lambda : print("go to saka")),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
