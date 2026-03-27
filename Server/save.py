@@ -61,7 +61,7 @@ class ButtonManager:
 
     def draw(self, camera_x:int=0, camera_y:int=0):
         for i, button in enumerate(self.buttons):
-            button.draw(selected=(i == self.selected_index), camera_x=camera_x, camera_y=camera_y)
+            button.draw((i == self.selected_index), camera_x=camera_x, camera_y=camera_y)
 
 #? ---------- FUNCTIONS ---------- ?#
 
@@ -82,16 +82,15 @@ class Game:
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
-            Scene(1, "PolyCube - Sélection de jeu", self.update_level_selection, self.draw_level_selection, "assets/assets.pyxres", PALETTE),
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
 
         #? Main Menu Variables
-        self.title = Text("PolyCube", 140, 20, 6, FONT_DEFAULT, 2, CENTER)
+        self.title = Text("PolyCube", 140, 20, [7, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20))
 
         self.main_menu_buttons = [
-            Button("Sélection de jeu", 140, 80, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to levels")),
-            Button("Quit", 140, 110, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : pyxel.quit()),
+            Button("Saka", 140, 80, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to saka")),
+            Button("Pong", 140, 110, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to pong")),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
@@ -100,21 +99,13 @@ class Game:
 
     def update_main_menu(self):
         self.title.update()
-
         self.main_menu_button_manager.update()
 
     def draw_main_menu(self):
         pyxel.cls(0)
 
         self.title.draw()
-
         self.main_menu_button_manager.draw()
-
-    def update_level_selection(self):
-        pass
-
-    def draw_level_selection(self):
-        pyxel.cls(0)
 
 #? ---------- MAIN ---------- ?#
 
