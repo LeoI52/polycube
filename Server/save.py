@@ -20,35 +20,49 @@ PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff,
 #? ---------- CLASSES ---------- ?#
 
 class ButtonManager:
-
-    def __init__(self, buttons:dict, links:dict):
-        """Links [up, down, left, right]"""
-        self.selected_button = 0
-        self.buttons = buttons
-        self.links = links
+    def __init__(self):
+        self.buttons = []
+        self.selected_index = 0
         self.last_move_time = 0
+        self.move_delay = 300  # ms
 
-    def update(self, ctrl_data:dict):
-        for id, button in self.buttons.items():
-            button.update()
-            if self.selected_button == id and ctrl_data['buttons']['H']:
-                button.on_click()
-                
-        if pyxel.frame_count - self.last_move_time > 300:
-            if ctrl_data['sensors']['accel']['x'] < -4 and self.links[self.selected_button][0] is not None:
-                self.selected_button = self.links[self.selected_button][0]
-            elif ctrl_data['sensors']['accel']['x'] > 4 and self.links[self.selected_button][1] is not None:
-                self.selected_button = self.links[self.selected_button][1]
-            elif ctrl_data['sensors']['accel']['y'] < -4 and self.links[self.selected_button][2] is not None:
-                self.selected_button = self.links[self.selected_button][2]
-            elif ctrl_data['sensors']['accel']['y'] > 4 and self.links[self.selected_button][3] is not None:
-                self.selected_button = self.links[self.selected_button][3]
-            self.last_move_time = pyxel.frame_count
+    def add_button(self, button):
+        self.buttons.append(button)
+
+    def clear(self):
+        self.buttons.clear()
+        self.selected_index = 0
+
+    def update(self, controller_data=None):
+        current_time = pyxel.frame_count
+
+        # --- CONTROLLER NAVIGATION ---
+        if controller_data:
+            accel_x = controller_data['sensors']['accel']['x']
+            btn_h = controller_data['buttons']['H']
+
+            if current_time - self.last_move_time > self.move_delay:
+                if accel_x > 4:
+                    self.selected_index = (self.selected_index + 1) % len(self.buttons)
+                    self.last_move_time = current_time
+
+                elif accel_x < -4:
+                    self.selected_index = (self.selected_index - 1) % len(self.buttons)
+                    self.last_move_time = current_time
+
+            # --- CLICK / SELECT ---
+            if btn_h and self.buttons:
+                selected_button = self.buttons[self.selected_index]
+                if selected_button.on_click:
+                    selected_button.on_click()
+
+        # --- MOUSE UPDATE (optional fallback) ---
+        for btn in self.buttons:
+            btn.update()
 
     def draw(self):
-        for id, button in self.buttons.items():
-            s = id == self.selected_button
-            button.draw(s)
+        for i, btn in enumerate(self.buttons):
+            btn.draw(selected=(i == self.selected_index))
 
 #? ---------- FUNCTIONS ---------- ?#
 
@@ -77,10 +91,9 @@ class Game:
         self.title = Text("PolyCube", 140, 20, 6, FONT_DEFAULT, 2, CENTER)
 
         #? Level Selection Variables
-        self.button_manager = ButtonManager({
-            0:Button("Jeu 1", 10, 10, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 0")),
-            1:Button("Jeu 2", 10, 40, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 1"))
-        }, {0:[None, 1, None, None], 1:[0, None, None, None]})
+        self.button_manager = ButtonManager()
+        self.button_manager.add_button(Button("Jeu 1", 10, 10, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 0")))
+        self.button_manager.add_button(Button("Jeu 2", 10, 40, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 1")))
         
         self.last_move_time = 0
 
@@ -100,8 +113,7 @@ class Game:
         p1_id = None
 
         if active_controllers:
-            p1_id = next((id for id in active_controllers if "JOUEUR-1" in id), list(active_controllers.keys())[0])
-            p1_data = active_controllers[p1_id]
+            p1_data = active_controllers[p1_id] if p1_id else None
             self.button_manager.update(p1_data)
 
     def draw_level_selection(self):
