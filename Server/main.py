@@ -36,6 +36,7 @@ class ButtonManager:
 
     def update(self):
         p1_id, p1_data = self.get_player1()
+        self.buttons[self.selected_index].update()
         if not p1_data or not self.buttons:
             return
 
@@ -82,6 +83,7 @@ class Game:
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
+            Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
 
@@ -89,14 +91,18 @@ class Game:
         self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
 
         self.main_menu_buttons = [
-            Button("Saka", 50, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=lambda : print("go to saka")),
-            Button("Pong", 50, 156, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT, on_click=lambda : print("go to pong")),
-            Button("Far West", 50, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=lambda : print("go to saka")),
+            Button("Saka", 40, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
+            Button("Pong", 40, 156, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT, on_click=lambda : print("go to pong")),
+            Button("Far West", 240, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=lambda : print("go to far west")),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
         #? Run
         self.pyxel_manager.run()
+
+    def saka_act(self):
+        print("saka")
+        self.pyxel_manager.change_scene_transition(TransitionOuterCircle(1, 2, 6))
 
     def update_main_menu(self):
         self.title.update()
@@ -107,6 +113,12 @@ class Game:
 
         self.title.draw()
         self.main_menu_button_manager.draw()
+
+    def update_saka(self):
+        pass
+
+    def draw_saka(self):
+        pyxel.cls(random.randint(0,15))
 
 #? ---------- MAIN ---------- ?#
 
