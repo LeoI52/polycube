@@ -856,6 +856,161 @@ class Button:
                 rounded_rectb(x, y, w, h, c, bc)
                 x += 1; y += 1; w -= 2; h -= 2; c = max(0, c - 1)
 
+#? -------------------- PARTICLES -------------------- ?#
+
+class Particle:
+
+    def __init__(self, x:int, y:int, lifespan:int, speed:int, target:tuple, friction:tuple=(0, 0), acceleration:tuple=(0, 0), dither_duration:int=0, zorder:int=0):
+        self.x, self.y = x, y
+        self.lifespan = lifespan
+        self.fx, self.fy = friction
+        self.ax, self.ay = acceleration
+        self.dither = 1
+        self.dither_duration = max(dither_duration, 0)
+        self.zorder = zorder
+
+        dx = target[0] - x
+        dy = target[1] - y
+        mag = (dx ** 2 + dy ** 2) ** 0.5
+        self.vx = dx / mag * speed if mag != 0 else 0
+        self.vy = dy / mag * speed if mag != 0 else 0
+
+    def update(self):
+        self.lifespan -= 1
+
+        self.vx += self.fx + self.ax
+        self.vy += self.fy + self.ay
+        self.x += self.vx
+        self.y += self.vy
+
+        if self.lifespan <= self.dither_duration and self.dither_duration:
+            self.dither -= 1 / self.dither_duration
+
+class ShapeParticle(Particle):
+
+    def __init__(self, x:int, y:int, w:int, h:int, colors:int|list, lifespan:int, speed:int, target:tuple, friction:tuple=(0, 0), acceleration:tuple=(0, 0), grow:tuple=(0, 0), dither_duration:int=0, hollow:bool=False, zorder:int=0):
+        super().__init__(x, y, lifespan, speed, target, friction, acceleration, dither_duration, zorder)
+        self.w, self.h = w, h
+        self.colors = [colors] if isinstance(colors, int) else colors
+        self.colors_length = len(self.colors)
+        self.current_color = 0
+        self.lifespan = round(lifespan / self.colors_length) * self.colors_length
+        self.initial_lifespan = self.lifespan
+        self.gw, self.gh = grow
+        self.hollow = hollow
+
+    def update(self):
+        super().update()
+
+        self.w += self.gw
+        self.h += self.gh
+
+        if self.w < 1 or self.h < 1:
+            self.lifespan = 0
+
+        if self.lifespan > 0 and self.lifespan % (self.initial_lifespan / self.colors_length) == 0:
+            self.current_color = (self.current_color + 1) % self.colors_length
+
+class LineParticle(ShapeParticle):
+
+    def __init__(self, x:int, y:int, lenght:int, colors:int|list, lifespan:int, speed:int, target:tuple, friction:tuple=(0, 0), acceleration:tuple=(0, 0), grow:int=0, dither_duration:int=0, zorder:int=0):
+        super().__init__(x, y, 1, 1, colors, lifespan, speed, target, friction, acceleration, (1, 1), dither_duration, False, zorder)
+        self.grow = grow
+        self.lenght = lenght
+
+    def update(self):
+        super().update()
+
+        self.lenght += self.grow
+
+    def draw(self):
+        vx2 = self.vx + self.fx + self.ax
+        vy2 = self.vy + self.fy + self.ay
+        mag = (vx2 ** 2 + vy2 ** 2) ** 0.5
+        x2 = self.x + (vx2 / mag * self.lenght) if mag != 0 else self.x
+        y2 = self.y + (vy2 / mag * self.lenght) if mag != 0 else self.y
+
+        pyxel.dither(self.dither)
+        pyxel.line(self.x, self.y, x2, y2, self.colors[self.current_color])
+        pyxel.dither(1)
+
+class ParticleManager:
+
+    def __init__(self):
+        self.particles = []
+
+    def reset(self):
+        self.particles = []
+
+    def add_particle(self, new_particle):
+        self.particles.append(new_particle)
+
+    def spawn(self, particle_type, amount:int, x:int, y:int, tx:tuple=(-3, 3), ty:tuple=(-3, 3), **kwargs):
+        for _ in range(amount):
+            params = {"x":x, "y":y, "target":(vrange(tx), vrange(ty))}
+            params.update({key: vrange(val) for key, val in kwargs.items()})
+            self.add_particle(particle_type(**params))
+
+    def burst(self, particle_type, x:int, y:int, amount:int=20, radius:int=40, speed:tuple=(1,4), **kwargs):
+        for _ in range(amount):
+            angle = random.uniform(0, 360)
+            tx = x + math.cos(math.radians(angle)) * radius
+            ty = y + math.sin(math.radians(angle)) * radius
+
+            params = {"x":x, "y":y, "target":(tx, ty), "speed":vrange(speed)}
+            params.update({key: vrange(val) for key, val in kwargs.items()})
+            self.add_particle(particle_type(**params))
+
+    def update(self):
+        for particle in self.particles:
+            particle.update()
+
+        self.particles = [particle for particle in self.particles if particle.lifespan]
+        self.particles = sorted(self.particles, key=lambda particle: particle.zorder)
+
+    def draw(self):
+        for particle in self.particles:
+            particle.draw()
+
+def vrange(value):
+    if not isinstance(value, (tuple, list)):
+        return value
+    if isinstance(value[0], (tuple, list)):
+        return tuple(vrange(v) for v in value)
+
+    a, b = value
+    if isinstance(a, int) and isinstance(b, int):
+        return random.randint(a, b)
+    return random.uniform(a, b)
+
+#? -------------------- BACKGROUNDS -------------------- ?#
+
+class MatrixRainBackground:
+    
+    def __init__(self, columns:int=32, speed:float=1.5, colors:list=[3, 11, 7]):
+        self.column_width = pyxel.width // columns
+        self.columns = columns
+        self.speed = speed
+        self.colors = colors
+        self.drops = [[random.randint(-20, pyxel.height), random.uniform(0.5, 2.0), random.randint(5, 20)] for _ in range(columns)]
+    
+    def update(self):
+        for drop in self.drops:
+            drop[0] += drop[1] * self.speed
+            if drop[0] > pyxel.height + drop[2]:
+                drop[0] = -drop[2]
+                drop[1] = random.uniform(0.5, 2.0)
+                drop[2] = random.randint(5, 20)
+    
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        for i, (y, speed, length) in enumerate(self.drops):
+            x = i * self.column_width + self.column_width // 2
+            for j in range(length):
+                char_y = y - j * 4
+                if 0 <= char_y < pyxel.height:
+                    color_idx = min(j // 3, len(self.colors) - 1)
+                    pyxel.rect(camera_x + x, camera_y + char_y, 2, 3, self.colors[color_idx])
+
 #? -------------------- DRAW UI -------------------- ?#
 
 def rounded_rect(x:int, y:int, width:int, height:int, corner_radius:int, color:int):
@@ -961,6 +1116,16 @@ def get_anchored_position_y(y:int, height:int, anchor:int)-> int:
         y -= height // 2
 
     return y
+
+#? -------------------- COLLISIONS -------------------- ?#
+
+def collision_rect_rect(x1:int, y1:int, w1:int, h1:int, x2:int, y2:int, w2:int, h2:int)-> bool:
+    return not (x1 + w1 < x2 or x2 + w2 < x1 or y1 + h1 < y2 or y2 + h2 < y1)
+
+#? -------------------- OTHER -------------------- ?#
+
+def clamp(value:float, min_value:float, max_value:float)-> float:
+    return max(min_value, min(max_value, value))
 
 #? -------------------- COLOR FUNCTIONS -------------------- ?#
 
