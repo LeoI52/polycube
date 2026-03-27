@@ -20,49 +20,57 @@ PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff,
 #? ---------- CLASSES ---------- ?#
 
 class ButtonManager:
-    def __init__(self):
-        self.buttons = []
+
+    def __init__(self, buttons:list[Button], move_cooldown:int=300):
+        self.buttons = buttons
         self.selected_index = 0
         self.last_move_time = 0
-        self.move_delay = 300  # ms
+        self.move_cooldown = move_cooldown
 
-    def add_button(self, button):
-        self.buttons.append(button)
+    def get_player1(self):
+        if not server.controllers:
+            return None, None
+        
+        p1_id = next(
+            (id for id in server.controllers if "JOUEUR-1" in id),
+            list(server.controllers.keys())[0]
+        )
+        return p1_id, server.controllers[p1_id]
 
-    def clear(self):
-        self.buttons.clear()
-        self.selected_index = 0
+    def update(self):
+        p1_id, p1_data = self.get_player1()
+        if not p1_data or not self.buttons:
+            return
 
-    def update(self, controller_data=None):
-        current_time = pyxel.frame_count
+        accel_x = p1_data['sensors']['accel']['x']
+        btn_h = p1_data['buttons']['H']
 
-        # --- CONTROLLER NAVIGATION ---
-        if controller_data:
-            accel_x = controller_data['sensors']['accel']['x']
-            btn_h = controller_data['buttons']['H']
+        current_time = pyxel.frame_count  # Pyxel timing
 
-            if current_time - self.last_move_time > self.move_delay:
-                if accel_x > 4:
-                    self.selected_index = (self.selected_index + 1) % len(self.buttons)
-                    self.last_move_time = current_time
+        # Convert cooldown (ms) → frames (~30fps)
+        cooldown_frames = self.move_cooldown // 33
 
-                elif accel_x < -4:
-                    self.selected_index = (self.selected_index - 1) % len(self.buttons)
-                    self.last_move_time = current_time
+        if current_time - self.last_move_time > cooldown_frames:
+            if accel_x > 4:
+                self.selected_index = (self.selected_index + 1) % len(self.buttons)
+                vibrate_controller(p1_id, 30)
+                self.last_move_time = current_time
 
-            # --- CLICK / SELECT ---
-            if btn_h and self.buttons:
-                selected_button = self.buttons[self.selected_index]
-                if selected_button.on_click:
-                    selected_button.on_click()
+            elif accel_x < -4:
+                self.selected_index = (self.selected_index - 1) % len(self.buttons)
+                vibrate_controller(p1_id, 30)
+                self.last_move_time = current_time
 
-        # --- MOUSE UPDATE (optional fallback) ---
-        for btn in self.buttons:
-            btn.update()
+        # Click
+        if btn_h:
+            vibrate_controller(p1_id, 100)
+            button = self.buttons[self.selected_index]
+            if button.on_click:
+                button.on_click()
 
-    def draw(self):
-        for i, btn in enumerate(self.buttons):
-            btn.draw(selected=(i == self.selected_index))
+    def draw(self, camera_x=0, camera_y=0):
+        for i, button in enumerate(self.buttons):
+            button.draw(selected=(i == self.selected_index), camera_x=camera_x, camera_y=camera_y)
 
 #? ---------- FUNCTIONS ---------- ?#
 
@@ -90,10 +98,12 @@ class Game:
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 20, 6, FONT_DEFAULT, 2, CENTER)
 
-        #? Level Selection Variables
-        self.button_manager = ButtonManager()
-        self.button_manager.add_button(Button("Jeu 1", 10, 10, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 0")))
-        self.button_manager.add_button(Button("Jeu 2", 10, 40, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 1")))
+        self.buttons = [
+            Button("Play", 140, 80, 3, 11, 7, 0, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to levels")),
+            Button("Quit", 140, 110, 3, 11, 7, 0, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : pyxel.quit()),
+        ]
+
+        self.button_manager = ButtonManager(self.buttons)
         
         self.last_move_time = 0
 
@@ -103,23 +113,20 @@ class Game:
     def update_main_menu(self):
         self.title.update()
 
+        self.button_manager.update()
+
     def draw_main_menu(self):
         pyxel.cls(0)
 
         self.title.draw()
 
-    def update_level_selection(self):
-        active_controllers = server.controllers.copy()
-        p1_id = None
+        self.button_manager.draw()
 
-        if active_controllers:
-            p1_data = active_controllers[p1_id] if p1_id else None
-            self.button_manager.update(p1_data)
+    def update_level_selection(self):
+        pass
 
     def draw_level_selection(self):
         pyxel.cls(1)
-
-        self.button_manager.draw()
         
         pyxel.text(pyxel.width//2 - 30, 20, "POLYCUBE SYSTEM", 12)
 
