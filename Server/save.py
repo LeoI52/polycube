@@ -80,9 +80,8 @@ class Game:
         self.button_manager = ButtonManager({
             0:Button("Jeu 1", 10, 10, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 0")),
             1:Button("Jeu 2", 10, 40, 7, 8, 8, 7, FONT_DEFAULT, on_click=lambda : print("B 1"))
-        }, {0:[None, None, None, 1], 1:[None, None, 0, None]})
-
-        self.selected_index = 0
+        }, {0:[None, 1, None, None], 1:[0, None, None, None]})
+        
         self.last_move_time = 0
 
         #? Run
