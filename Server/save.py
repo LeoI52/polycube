@@ -25,7 +25,7 @@ class ButtonManager:
         self.buttons = buttons
         self.selected_index = 0
         self.last_move_time = 0
-        self.move_cooldown = 150
+        self.move_cooldown = 30
 
     def get_player1(self):
         if not server.controllers:
@@ -84,7 +84,7 @@ class Game:
             Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "PolyCube - Sélection de jeu", self.update_level_selection, self.draw_level_selection, "assets/assets.pyxres", PALETTE),
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True, fps=30)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 20, 6, FONT_DEFAULT, 2, CENTER)
