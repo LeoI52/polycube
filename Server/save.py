@@ -22,6 +22,7 @@ PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff,
 class ButtonManager:
 
     def __init__(self, buttons:dict, links:dict):
+        """Links [up, down, left, right]"""
         self.selected_button = 0
         self.buttons = buttons
         self.links = links
@@ -34,13 +35,13 @@ class ButtonManager:
                 button.on_click()
                 
         if pyxel.frame_count - self.last_move_time > 300:
-            if ctrl_data['sensors']['accel']['y'] < -4 and self.links[self.selected_button][0] is not None:
+            if ctrl_data['sensors']['accel']['x'] < -4 and self.links[self.selected_button][0] is not None:
                 self.selected_button = self.links[self.selected_button][0]
-            elif ctrl_data['sensors']['accel']['y'] > 4 and self.links[self.selected_button][1] is not None:
+            elif ctrl_data['sensors']['accel']['x'] > 4 and self.links[self.selected_button][1] is not None:
                 self.selected_button = self.links[self.selected_button][1]
-            elif ctrl_data['sensors']['accel']['x'] > 4 and self.links[self.selected_button][2] is not None:
+            elif ctrl_data['sensors']['accel']['y'] < -4 and self.links[self.selected_button][2] is not None:
                 self.selected_button = self.links[self.selected_button][2]
-            elif ctrl_data['sensors']['accel']['x'] < -4 and self.links[self.selected_button][3] is not None:
+            elif ctrl_data['sensors']['accel']['y'] > 4 and self.links[self.selected_button][3] is not None:
                 self.selected_button = self.links[self.selected_button][3]
             self.last_move_time = pyxel.frame_count
 
@@ -105,8 +106,18 @@ class Game:
             self.button_manager.update(p1_data)
 
     def draw_level_selection(self):
-        pyxel.cls(0)
+        pyxel.cls(1)
+
         self.button_manager.draw()
+        
+        pyxel.text(pyxel.width//2 - 30, 20, "POLYCUBE SYSTEM", 12)
+
+        p1_connected = any("JOUEUR-1" in id for id in server.controllers)
+        status_color = 11 if p1_connected else 8
+        status_text = "MANETTE OK" if p1_connected else "MANETTE DECONNECTEE"
+        
+        pyxel.rect(0, pyxel.height - 15, pyxel.width, 15, 0)
+        pyxel.text(5, pyxel.height - 10, status_text, status_color)
 
 #? ---------- MAIN ---------- ?#
 
