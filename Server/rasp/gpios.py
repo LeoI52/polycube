@@ -1,16 +1,15 @@
-import time
-import sys
-import os
 from gpiozero import LED, Button
+import time
 
 
-l1 = # led for player 1 
-l2 = # led for player 2 
-l3 = # led for player 3 
-l4 = # led for player 4 
+# l1 = # led for player 1 
+# l2 = # led for player 2 
+# l3 = # led for player 3 
+# l4 = # led for player 4 
 
 
 class GameHardware:
+
     def __init__(self):
         # 1. Standard LEDs (GPIO Pins 18, 23, 24, 25)
         # These can represent Health, Ammo, Level, etc.

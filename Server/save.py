@@ -10,6 +10,9 @@ from utils import *
 import threading
 import server
 
+from gpiozero import LED
+from signal import pause
+
 #? ---------- CONSTANTS ---------- ?#
 
 PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff, 0x5ee9e9, 
@@ -86,15 +89,19 @@ class Game:
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
 
         #? Main Menu Variables
-        self.title = Text("PolyCube", 140, 20, [7, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20))
+        self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
 
         self.main_menu_buttons = [
-            Button("Saka", 140, 80, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to saka")),
-            Button("Pong", 140, 110, 7, 8, 8, 7, FONT_DEFAULT, 1, anchor=CENTER, on_click=lambda : print("go to pong")),
+            Button("Saka", 140, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=CENTER, on_click=lambda : print("go to saka")),
+            Button("Pong", 140, 110, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=CENTER, on_click=lambda : print("go to pong")),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
         #? Run
+        led = LED(18)
+        led.blink(on_time=1, off_time=1)
+
+        pause()
         self.pyxel_manager.run()
 
     def update_main_menu(self):
