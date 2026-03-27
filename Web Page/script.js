@@ -43,21 +43,21 @@ socket.on('slots_update', (slots) => {
         if (!btn) continue;
         if (slots[i]) {
             btn.classList.replace('available', 'taken');
-            btn.innerText = "OCCUPÉ";
+            btn.innerText = "TAKEN";
         } else {
             btn.classList.replace('taken', 'available');
-            btn.innerText = `JOUEUR ${i}`;
+            btn.innerText = `PLAYER ${i}`;
         }
     }
 });
 
 window.selectSlot = (num) => {
-    document.getElementById('lobby-status').innerText = `Demande du slot ${num}...`;
+    document.getElementById('lobby-status').innerText = `Waiting for slot ${num}...`;
     socket.emit('select_slot', num);
 };
 
 socket.on('slot_confirmed', (data) => {
-    controllerState.id = `JOUEUR-${data.slot}`;
+    controllerState.id = `PLAYER-${data.slot}`;
     requestWakeLock(); // Activer le Wake Lock dès que le jeu commence
     startCalibrationFlow();
 });
@@ -117,7 +117,7 @@ function finalizeCalibration(samples) {
         z: sum.z / samples.length
     };
 
-    calibStatus.innerText = "PRÊT !";
+    calibStatus.innerText = "Ready !";
     setTimeout(() => {
         isCalibrating = false;
         calibOverlay.style.display = 'none';
@@ -167,8 +167,8 @@ function setupButton(id, key) {
     el.addEventListener('mouseup', () => update(false));
 }
 
-setupButton('btn-H', 'H');
-setupButton('btn-Pause', 'Pause');
+setupButton('btn-H', 'Press');
+setupButton('btn-Pause', 'Back');
 
 let lastSend = 0;
 function sendData() {
@@ -181,6 +181,6 @@ function sendData() {
 }
 
 socket.on('connect', () => {
-    statusEl.innerText = "● Connecté";
+    statusEl.innerText = "● Connected";
     statusEl.style.color = "#4ade80";
 });

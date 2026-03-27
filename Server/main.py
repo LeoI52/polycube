@@ -86,7 +86,7 @@ class Game:
 
         #? Pyxel Init
         scenes = [
-            Scene(0, "PolyCube - Menu Principal", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
+            Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
@@ -106,7 +106,7 @@ class Game:
 
     def saka_act(self):
         print("saka")
-        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 1, 8, 6))
+        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def update_main_menu(self):
         self.title.update()

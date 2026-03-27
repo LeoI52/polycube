@@ -12,16 +12,16 @@
     <div id="lobby">
         <div class="lobby-content">
             <h1>POLYCUBE</h1>
-            <p>Choisissez votre numéro de joueur :</p>
+            <p>Choose your player :</p>
             <div class="slot-grid">
-                <button class="slot-btn available" id="slot-1" onclick="selectSlot(1)">JOUEUR 1</button>
-                <button class="slot-btn available" id="slot-2" onclick="selectSlot(2)">JOUEUR 2</button>
-                <button class="slot-btn available" id="slot-3" onclick="selectSlot(3)">JOUEUR 3</button>
-                <button class="slot-btn available" id="slot-4" onclick="selectSlot(4)">JOUEUR 4</button>
+                <button class="slot-btn available" id="slot-1" onclick="selectSlot(1)">Player 1</button>
+                <button class="slot-btn available" id="slot-2" onclick="selectSlot(2)">Player 2</button>
+                <button class="slot-btn available" id="slot-3" onclick="selectSlot(3)">Player 3</button>
+                <button class="slot-btn available" id="slot-4" onclick="selectSlot(4)">Player 4</button>
             </div>
-            <div id="lobby-status">Prêt pour la connexion...</div>
+            <div id="lobby-status">Ready for connection...</div>
         </div>
-        <button id="btn-test">MODE TEST</button>
+        <button id="btn-test">TEST MODE</button>
     </div>
 
     <!-- Écran de Calibration Obligatoire -->
@@ -29,27 +29,27 @@
         <div class="calib-content">
             <div class="calib-icon">📏</div>
             <h2>CALIBRATION</h2>
-            <p id="calib-instruction">Posez votre téléphone sur une <strong>surface plane</strong> et ne le touchez plus.</p>
+            <p id="calib-instruction">Put your phone down on a <strong>flat surface</strong> and do not touch it.</p>
             
             <div class="progress-container">
                 <div id="calib-progress-bar"></div>
             </div>
             
-            <p id="calib-status">En attente de stabilité...</p>
+            <p id="calib-status">Waiting for stabilization...</p>
         </div>
     </div>
 
     <!-- Interface Manette (masquée pendant la calib) -->
     <div id="controller-ui" style="visibility: hidden;">
         <div class="status-bar">
-            <div class="status" id="connection-status">Serveur...</div>
-            <div id="debug">Capteurs : Prêt</div>
-            <button class="btn-calibrate-mini" onclick="startCalibrationFlow()">RE-CALIBRER</button>
+            <div class="status" id="connection-status">Server...</div>
+            <div id="debug">Sensors : Ready</div>
+            <button class="btn-calibrate-mini" onclick="startCalibrationFlow()">RE-CALIBRATE</button>
         </div>
 
         <div class="controls-container">
-            <div class="btn" id="btn-H">H</div>
-            <div class="btn" id="btn-Pause">Pause</div>
+            <div class="btn" id="btn-H">Press</div>
+            <div class="btn" id="btn-Pause">Back</div>
         </div>
     </div>
 
