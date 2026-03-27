@@ -31,7 +31,7 @@ class ButtonManager:
         if not server.controllers:
             return None, None
         
-        p1_id = next((id for id in server.controllers if "JOUEUR-1" in id), list(server.controllers.keys())[0])
+        p1_id = next((id for id in server.controllers if "PLAYER-1" in id), list(server.controllers.keys())[0])
         return p1_id, server.controllers[p1_id]
 
     def update(self):
