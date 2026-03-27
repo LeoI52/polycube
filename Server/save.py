@@ -9,7 +9,6 @@
 from utils import *
 import threading
 import server
-from rasp.gpios import GameHardware
 
 #? ---------- CONSTANTS ---------- ?#
 
@@ -95,16 +94,12 @@ class Game:
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
-        self.gh = GameHardware()
-
         #? Run
         self.pyxel_manager.run()
 
     def update_main_menu(self):
         self.title.update()
         self.main_menu_button_manager.update()
-        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            self.gh.flash_all(1)
 
     def draw_main_menu(self):
         pyxel.cls(0)
