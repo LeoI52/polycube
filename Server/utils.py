@@ -938,12 +938,15 @@ class ParticleManager:
 
     def __init__(self):
         self.particles = []
+        self._needs_sort = False
 
     def reset(self):
         self.particles = []
+        self._needs_sort = False
 
     def add_particle(self, new_particle):
         self.particles.append(new_particle)
+        self._needs_sort = True
 
     def spawn(self, particle_type, amount:int, x:int, y:int, tx:tuple=(-3, 3), ty:tuple=(-3, 3), **kwargs):
         for _ in range(amount):
@@ -962,11 +965,15 @@ class ParticleManager:
             self.add_particle(particle_type(**params))
 
     def update(self):
+        # On ne garde que les particules vivantes
+        self.particles = [p for p in self.particles if p.lifespan > 0]
+        
         for particle in self.particles:
             particle.update()
 
-        self.particles = [particle for particle in self.particles if particle.lifespan]
-        self.particles = sorted(self.particles, key=lambda particle: particle.zorder)
+        if self._needs_sort:
+            self.particles.sort(key=lambda particle: particle.zorder)
+            self._needs_sort = False
 
     def draw(self):
         for particle in self.particles:

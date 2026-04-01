@@ -28,11 +28,23 @@ class ButtonManager:
         self.move_cooldown = 45
 
     def get_player1(self):
-        if not server.controllers:
+        # On fait une copie locale pour éviter les erreurs d'itération si le serveur modifie le dict en même temps
+        local_controllers = server.controllers.copy()
+        if not local_controllers:
             return None, None
         
-        p1_id = next((id for id in server.controllers if "PLAYER-1" in id), list(server.controllers.keys())[0])
-        return p1_id, server.controllers[p1_id]
+        # Recherche prioritaire de "JOUEUR-1" (match exact ou partiel)
+        p1_id = None
+        for cid in local_controllers:
+            if "JOUEUR-1" in cid:
+                p1_id = cid
+                break
+        
+        # Si non trouvé, on prend le premier disponible
+        if not p1_id:
+            p1_id = next(iter(local_controllers))
+            
+        return p1_id, local_controllers[p1_id]
 
     def update(self):
         p1_id, p1_data = self.get_player1()
