@@ -2,11 +2,23 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
+import socket
 import time
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
-# Configuration des chemins d'accès
+# Fonction pour trouver l'IP locale sur le réseau (ex: 192.168.1.15)
+def get_lan_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Web Page"))
 
 app = Flask(__name__, template_folder=base_dir, static_folder=base_dir, static_url_path='')
@@ -61,31 +73,29 @@ def handle_disconnect():
     for slot, sid in occupied_slots.items():
         if sid == request.sid:
             occupied_slots[slot] = None
-            if f"JOUEUR-{slot}" in controllers: del controllers[f"JOUEUR-1"]
+            ctrl_id = f"JOUEUR-{slot}"
+            if ctrl_id in controllers: del controllers[ctrl_id]
             socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
             break
 
-def dashboard_update_loop():
-    while True:
-        socketio.emit('update_dashboard', controllers, room='dev_room')
-        socketio.sleep(0.1)
-
 def start_server():
-    socketio.start_background_task(dashboard_update_loop)
-    
-    # Chemins absolus pour les certificats
     current_dir = os.path.dirname(os.path.abspath(__file__))
     cert_file = os.path.join(current_dir, "SSL/cert.pem")
     key_file = os.path.join(current_dir, "SSL/key.pem")
 
+    lan_ip = get_lan_ip()
+    
     if os.path.exists(cert_file) and os.path.exists(key_file):
-        print(f"--- SERVEUR HTTPS LANCÉ sur https://0.0.0.0:4000 ---")
-        # Utilisation de eventlet directement pour plus de stabilité avec SSL
+        print(f"\n" + "="*50)
+        print(f"SERVEUR HTTPS PRÊT !")
+        print(f"Connectez votre téléphone à : https://{lan_ip}:4000")
+        print("="*50 + "\n")
+        
         socketio.run(app, host='0.0.0.0', port=4000, 
                      certfile=cert_file, keyfile=key_file,
-                     debug=False, use_reloader=False, log_output=True)
+                     debug=False, use_reloader=False)
     else:
-        print("!!! ERREUR : Certificats SSL introuvables. Mode HTTP forcé.")
+        print("!!! ERREUR : Certificats SSL introuvables.")
         socketio.run(app, host='0.0.0.0', port=4000, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
