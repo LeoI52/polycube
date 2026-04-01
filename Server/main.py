@@ -9,6 +9,7 @@
 from utils import *
 import threading
 import server
+from rasp.gpios import gpio_manager
 
 #? ---------- CONSTANTS ---------- ?#
 
@@ -387,11 +388,17 @@ class Game:
 
     def saka_act(self):
         print("saka")
+        gpio_manager.blink_start_sequence()
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def update_main_menu(self):
         self.title.update()
         self.main_menu_button_manager.update()
+        
+        # Mise à jour des LEDs vertes en fonction des manettes connectées
+        # On le fait ici car c'est demandé uniquement sur l'écran de démarrage
+        if pyxel.frame_count % 30 == 0: # Toutes les secondes environ (à 30fps)
+            gpio_manager.update_controllers(server.occupied_slots)
 
     def draw_main_menu(self):
         pyxel.cls(0)
