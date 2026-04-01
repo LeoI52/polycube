@@ -1,31 +1,22 @@
-#? ---------- SERVEUR EN PRIORITÉ ---------- ?#
-import server # Charge eventlet et fait le monkey_patch immédiatement
+#? ---------- IMPORTS PRIORITAIRES ---------- ?#
+import server # Charge eventlet
 import threading
-
-# On lance le serveur dans un thread séparé tout de suite
-# pour être sûr d'avoir accès à la page web même si le reste bug
-print("Démarrage du serveur web (port 4000)...")
-server_thread = threading.Thread(target=server.start_server, daemon=True)
-server_thread.start()
-
-#? ---------- AUTRES IMPORTS ---------- ?#
-from utils import *
-import random
 import time
 
-print("Chargement des GPIO (en tâche de fond)...")
-gpio_manager = None
-def load_gpio():
-    global gpio_manager
-    try:
-        from rasp.gpios import gpio_manager as gm
-        gpio_manager = gm
-        print("GPIO opérationnels.")
-    except Exception as e:
-        print(f"GPIO non disponibles: {e}")
+#? ---------- GPIO STARTUP ---------- ?#
+from rasp.gpios import gpio_manager
+# Séquence de 5s au démarrage (bloquante pour être visible avant le reste)
+gpio_manager.startup_sequence()
 
-# On charge les GPIO dans un thread pour ne pas bloquer le lancement de Pyxel
-threading.Thread(target=load_gpio, daemon=True).start()
+#? ---------- SERVEUR ---------- ?#
+print("Démarrage du serveur web (port 4000)...")
+def run_server():
+    server.start_server()
+threading.Thread(target=run_server, daemon=True).start()
+
+#? ---------- PYXEL ---------- ?#
+from utils import *
+import random
 
 #? ---------- CONSTANTS ---------- ?#
 PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff, 0x5ee9e9, 
@@ -183,7 +174,7 @@ class Game:
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=False)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
 
         self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
         self.main_menu_buttons = [
