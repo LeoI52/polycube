@@ -1,11 +1,9 @@
-import eventlet
-eventlet.monkey_patch()
-
 import os
 import socket
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
+# Fonction pour trouver l'IP réelle sur le réseau
 def get_lan_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -21,8 +19,9 @@ base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Web Pa
 
 app = Flask(__name__, template_folder=base_dir, static_folder=base_dir, static_url_path='')
 app.config['SECRET_KEY'] = 'polycube_2024_key'
-# On autorise explicitement toutes les origines pour éviter les blocages CORS en HTTPS
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# On utilise le mode 'threading' au lieu d'eventlet pour la compatibilité Python 3.13
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 controllers = {}
 occupied_slots = {1: None, 2: None, 3: None, 4: None}
@@ -72,7 +71,8 @@ def handle_disconnect():
     for slot, sid in occupied_slots.items():
         if sid == request.sid:
             occupied_slots[slot] = None
-            if f"JOUEUR-{slot}" in controllers: del controllers[f"JOUEUR-{slot}"]
+            ctrl_id = f"JOUEUR-{slot}"
+            if ctrl_id in controllers: del controllers[ctrl_id]
             socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
             break
 
@@ -80,21 +80,20 @@ def start_server():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     cert_file = os.path.join(current_dir, "SSL/cert.pem")
     key_file = os.path.join(current_dir, "SSL/key.pem")
-
     lan_ip = get_lan_ip()
     
     if os.path.exists(cert_file) and os.path.exists(key_file):
         print(f"\n" + "="*50)
-        print(f"SERVEUR HTTPS PRÊT !")
+        print(f"SERVEUR HTTPS PRÊT (Mode Threading)")
         print(f"URL: https://{lan_ip}:4000")
         print("="*50 + "\n")
         
-        # Configuration SSL explicite pour eventlet
+        # Flask gère le SSL via Werkzeug
         socketio.run(app, host='0.0.0.0', port=4000, 
-                     certfile=cert_file, keyfile=key_file,
+                     ssl_context=(cert_file, key_file),
                      debug=False, use_reloader=False)
     else:
-        print("!!! ERREUR : Certificats SSL introuvables. Mode HTTP.")
+        print("!!! ERREUR : Certificats SSL introuvables.")
         socketio.run(app, host='0.0.0.0', port=4000)
 
 if __name__ == '__main__':
