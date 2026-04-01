@@ -1,20 +1,19 @@
-#? ---------- IMPORTS PRIORITAIRES ---------- ?#
-import server # Charge eventlet
-import threading
-import time
-
-#? ---------- GPIO STARTUP ---------- ?#
+#? ---------- 1. GPIO EN PREMIER (Indépendant du serveur) ---------- ?#
+print("Initialisation du matériel...")
 from rasp.gpios import gpio_manager
-# Séquence de 5s au démarrage (bloquante pour être visible avant le reste)
+# Séquence de 5s au démarrage (avant de lancer les threads complexes)
 gpio_manager.startup_sequence()
 
-#? ---------- SERVEUR ---------- ?#
-print("Démarrage du serveur web (port 4000)...")
+#? ---------- 2. CHARGEMENT DU SERVEUR ---------- ?#
+print("Lancement du serveur web...")
+import server # Ici eventlet fera son monkey_patch
+import threading
+
 def run_server():
     server.start_server()
 threading.Thread(target=run_server, daemon=True).start()
 
-#? ---------- PYXEL ---------- ?#
+#? ---------- 3. RESTE DES IMPORTS ---------- ?#
 from utils import *
 import random
 
