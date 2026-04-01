@@ -1,7 +1,7 @@
 import os
 import socket
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 
 # Fonction pour trouver l'IP réelle sur le réseau
 def get_lan_ip():
@@ -20,7 +20,7 @@ base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Web Pa
 app = Flask(__name__, template_folder=base_dir, static_folder=base_dir, static_url_path='')
 app.config['SECRET_KEY'] = 'polycube_2024_key'
 
-# On utilise le mode 'threading' au lieu d'eventlet pour la compatibilité Python 3.13
+# Mode 'threading' pour compatibilité Python 3.13
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 controllers = {}
@@ -30,9 +30,20 @@ occupied_slots = {1: None, 2: None, 3: None, 4: None}
 def index():
     return render_template('main.html')
 
+@app.route('/dev')
+def dev_dashboard():
+    return render_template('dev.html')
+
 @socketio.on('connect')
 def handle_connect():
     emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
+
+@socketio.on('join_dev')
+def handle_join_dev():
+    join_room('dev_room')
+    # Envoyer l'état complet au dashboard lors de sa connexion
+    emit('update_dashboard', controllers)
+    print("DEBUG: Dashboard monitoring connecté")
 
 @socketio.on('select_slot')
 def handle_select_slot(requested_slot):
@@ -48,6 +59,8 @@ def handle_select_slot(requested_slot):
         }
         emit('slot_confirmed', {"slot": slot})
         socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
+        # Notifier le dashboard
+        socketio.emit('update_dashboard', controllers, room='dev_room')
     else:
         emit('slot_denied', {"message": "Occupé !"})
 
@@ -66,6 +79,22 @@ def handle_data(data):
                 acc = s[3]
                 controllers[ctrl_id]['sensors']['accel']['x'], controllers[ctrl_id]['sensors']['accel']['y'], controllers[ctrl_id]['sensors']['accel']['z'] = acc[0], acc[1], acc[2]
 
+@socketio.on('vibrate_request')
+def handle_vibrate_request(ctrl_id):
+    if ctrl_id in controllers:
+        target_sid = controllers[ctrl_id].get('sid')
+        if target_sid:
+            socketio.emit('vibrate', {'duration': 400}, room=target_sid)
+
+@socketio.on('kick_all')
+def handle_kick_all():
+    global controllers, occupied_slots
+    controllers.clear()
+    for k in occupied_slots: occupied_slots[k] = None
+    socketio.emit('force_reset') 
+    socketio.emit('update_dashboard', controllers, room='dev_room')
+    socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
+
 @socketio.on('disconnect')
 def handle_disconnect():
     for slot, sid in occupied_slots.items():
@@ -74,9 +103,19 @@ def handle_disconnect():
             ctrl_id = f"JOUEUR-{slot}"
             if ctrl_id in controllers: del controllers[ctrl_id]
             socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
+            socketio.emit('update_dashboard', controllers, room='dev_room')
             break
 
+# Tâche de fond pour mettre à jour le dashboard à 10Hz
+def dashboard_update_loop():
+    while True:
+        socketio.emit('update_dashboard', controllers, room='dev_room')
+        socketio.sleep(0.1)
+
 def start_server():
+    # Lancement de la boucle de monitoring
+    socketio.start_background_task(dashboard_update_loop)
+    
     current_dir = os.path.dirname(os.path.abspath(__file__))
     cert_file = os.path.join(current_dir, "SSL/cert.pem")
     key_file = os.path.join(current_dir, "SSL/key.pem")
@@ -84,11 +123,11 @@ def start_server():
     
     if os.path.exists(cert_file) and os.path.exists(key_file):
         print(f"\n" + "="*50)
-        print(f"SERVEUR HTTPS PRÊT (Mode Threading)")
-        print(f"URL: https://{lan_ip}:4000")
+        print(f"SERVEUR HTTPS PRÊT")
+        print(f"Main: https://{lan_ip}:4000")
+        print(f"Dev:  https://{lan_ip}:4000/dev")
         print("="*50 + "\n")
         
-        # Flask gère le SSL via Werkzeug
         socketio.run(app, host='0.0.0.0', port=4000, 
                      ssl_context=(cert_file, key_file),
                      debug=False, use_reloader=False)
