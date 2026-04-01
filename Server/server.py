@@ -3,11 +3,9 @@ eventlet.monkey_patch()
 
 import os
 import socket
-import time
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit
 
-# Fonction pour trouver l'IP locale sur le réseau (ex: 192.168.1.15)
 def get_lan_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -23,7 +21,8 @@ base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Web Pa
 
 app = Flask(__name__, template_folder=base_dir, static_folder=base_dir, static_url_path='')
 app.config['SECRET_KEY'] = 'polycube_2024_key'
-socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=1e6)
+# On autorise explicitement toutes les origines pour éviter les blocages CORS en HTTPS
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 controllers = {}
 occupied_slots = {1: None, 2: None, 3: None, 4: None}
@@ -73,8 +72,7 @@ def handle_disconnect():
     for slot, sid in occupied_slots.items():
         if sid == request.sid:
             occupied_slots[slot] = None
-            ctrl_id = f"JOUEUR-{slot}"
-            if ctrl_id in controllers: del controllers[ctrl_id]
+            if f"JOUEUR-{slot}" in controllers: del controllers[f"JOUEUR-{slot}"]
             socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
             break
 
@@ -88,15 +86,16 @@ def start_server():
     if os.path.exists(cert_file) and os.path.exists(key_file):
         print(f"\n" + "="*50)
         print(f"SERVEUR HTTPS PRÊT !")
-        print(f"Connectez votre téléphone à : https://{lan_ip}:4000")
+        print(f"URL: https://{lan_ip}:4000")
         print("="*50 + "\n")
         
+        # Configuration SSL explicite pour eventlet
         socketio.run(app, host='0.0.0.0', port=4000, 
                      certfile=cert_file, keyfile=key_file,
                      debug=False, use_reloader=False)
     else:
-        print("!!! ERREUR : Certificats SSL introuvables.")
-        socketio.run(app, host='0.0.0.0', port=4000, debug=False, use_reloader=False)
+        print("!!! ERREUR : Certificats SSL introuvables. Mode HTTP.")
+        socketio.run(app, host='0.0.0.0', port=4000)
 
 if __name__ == '__main__':
     start_server()
