@@ -317,13 +317,13 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
                         pyxel.pset(x + px + ox, y + py + oy, col)
 
 def left(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] < -3
+    return controls['sensors']['accel']['y'] < -2
 
 def right(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] > 3
+    return controls['sensors']['accel']['y'] > 2
 
 def jump(controls:int)-> bool:
-    return controls['sensors']['accel']['x'] > 6 or controls['buttons']['Press']
+    return controls['buttons']['Press']
 
 def crouch(controls:int)-> bool:
     return controls['sensors']['accel']['x'] < -4

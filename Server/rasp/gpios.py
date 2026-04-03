@@ -38,7 +38,7 @@ class GPIOManager:
     def tag(self):
         try:
             self.rgb.color = (1, 0, 0)
-            time.sleep(0.5)
+            time.sleep(0.2)
         except: pass
         self.all_off()
 
