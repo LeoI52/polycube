@@ -111,7 +111,7 @@ body {
     margin-top: 10px; display: block; margin-left: auto; margin-right: auto;
 }
 
-.controls-container { display: flex; gap: 40px; }
+.controls-container { display: flex; gap: 40px; flex-direction: column; align-items: center;    /* Centre les boutons horizontalement */}
 .btn {
     width: 110px; height: 110px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
