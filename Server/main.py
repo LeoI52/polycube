@@ -73,7 +73,7 @@ class ButtonManager:
 
 class Player:
 
-    def __init__(self, x:int, y:int, u:int, player_number:int, tagger:bool):
+    def __init__(self, x:int, y:int, u:int, level:int, player_number:int, tagger:bool):
         self.x, self.y = x, y
         self.w, self.h = 8, 8
 
@@ -84,6 +84,7 @@ class Player:
 
         self.u = u
         self.controls = None
+        self.level = level
 
         #? Velocity
         self.velocity_x = 0
@@ -117,7 +118,7 @@ class Player:
         self.velocity_y = min(self.velocity_y + self.gravity, self.max_velocity_y)
         self.velocity_x *= self.friction
 
-        self.on_ground = collision_rect_tiles(self.x, self.y + 1, self.w, self.h, COLLISION_TILES)
+        self.on_ground = collision_rect_tiles(self.x, self.y + 1, self.w, self.h, COLLISION_TILES, self.level)
 
         if self.on_ground:
             if not self.jumping:
@@ -145,14 +146,14 @@ class Player:
             self.jump_buffer_timer = 0
 
     def _handle_levers(self):
-        tiles = tiles_in_rect(self.x- 4, self.y, self.w + 8, self.h, LEVER_TILES)
+        tiles = tiles_in_rect(self.x- 4, self.y, self.w + 8, self.h, LEVER_TILES, self.level)
         if tiles:
-            timer, door_tile, hollow_tile, door_tiles, timer_duration = LEVERS_DICT[tiles[0]]
+            timer, door_tile, hollow_tile, door_tiles, timer_duration = LEVERS_DICT[self.level][tiles[0]]
             u, v = pyxel.tilemaps[0].pget(*tiles[0])
 
             if timer == 0:
                 pyxel.tilemaps[0].pset(*tiles[0], (u + 1, v))
-                LEVERS_DICT[tiles[0]][0] = timer_duration
+                LEVERS_DICT[self.level][tiles[0]][0] = timer_duration
                 for tx, ty in door_tiles:
                     if pyxel.tilemaps[0].pget(tx, ty) == door_tile:
                         pyxel.tilemaps[0].pset(tx, ty, hollow_tile)
@@ -166,7 +167,7 @@ class Player:
             self.velocity_x -= self.vx_r
             step_x = 1 if self.velocity_x > 0 else -1
             for _ in range(int(abs(self.velocity_x))):
-                if not collision_rect_tiles(self.x + step_x, self.y, self.w, self.h, COLLISION_TILES) and 0 <= self.x + step_x and self.x + self.w + step_x <= pyxel.width:
+                if not collision_rect_tiles(self.x + step_x, self.y, self.w, self.h, COLLISION_TILES, self.level) and 0 <= self.x + step_x and self.x + self.w + step_x <= pyxel.width:
                     self.x += step_x
                 else:
                     self.velocity_x = 0
@@ -176,7 +177,7 @@ class Player:
         if self.velocity_y != 0:
             step_y = 1 if self.velocity_y > 0 else -1
             for _ in range(int(abs(self.velocity_y))):
-                if not collision_rect_tiles(self.x, self.y + step_y, self.w, self.h, COLLISION_TILES) and 0 <= self.y + step_y and self.y + self.h +step_y <= pyxel.height:
+                if not collision_rect_tiles(self.x, self.y + step_y, self.w, self.h, COLLISION_TILES, self.level) and 0 <= self.y + step_y and self.y + self.h +step_y <= pyxel.height:
                     self.y += step_y
                 else:
                     self.velocity_y = 0
@@ -207,7 +208,7 @@ class Player:
         if self.tagger and not pyxel.frame_count // 6 % 6 == 0:
             blt_outline(self.x, self.y, 0, self.u, v, 8, 8, col=8, flip_x=not self.facing_right)
 
-class Teleproter:
+class Teleporter:
 
     def __init__(self, x:int, y:int, w:int, h:int, x_spawn:int, y_spawn:int, teleporter_id:int, particle_spawn_off:int=0):
         self.x, self.y = x, y
@@ -216,10 +217,10 @@ class Teleproter:
         self.x_spawn, self.y_spawn = x_spawn, y_spawn
         self.teleporter_id = teleporter_id
 
-    def update(self, players:list):
+    def update(self, players:list, level:int):
         for player in players:
             if collision_rect_rect(player.x, player.y, player.w, player.h, self.x, self.y, self.w, self.h):
-                nx, ny = TELEPORTERS[self.teleporter_id].x_spawn, TELEPORTERS[self.teleporter_id].y_spawn
+                nx, ny = TELEPORTERS[level][self.teleporter_id].x_spawn, TELEPORTERS[level][self.teleporter_id].y_spawn
                 player.x = nx
                 player.y = ny
 
@@ -327,17 +328,20 @@ def crouch(controls:int)-> bool:
 #? ---------- SAKA CONSTANTS ---------- ?#
 
 COLLISION_TILES = [(0,1),(3,2)]
-
 LEVER_TILES = [(3,1),(4,1)]
-LEVERS_DICT = {
-    #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
-    (11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 480]
-}
 
-TELEPORTERS = {
-    1:Teleproter(0, 18*8, 8, 24, 16, 20*8, 2, 8),
-    2:Teleproter(34*8, 8, 8, 24, 32*8, 24, 1)
-}
+PLAYER_POS = [
+    [[16, 24], [264, 160]],
+]
+
+LEVERS_DICT = [
+    #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
+    {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 480]},
+]
+
+TELEPORTERS = [
+    {1:Teleporter(0, 18*8, 8, 24, 16, 20*8, 2, 8), 2:Teleporter(34*8, 8, 8, 24, 32*8, 24, 1)},
+]
 
 #? ---------- GAME ---------- ?#
 
@@ -373,13 +377,14 @@ class Game:
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
+        self.level = 0
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
         while p2_u == p1_u:
             p2_u = random.randint(0, 12) * 8
-        self.player_1 = Player(10, 10, p1_u, 1, t)
-        self.player_2 = Player(262, 160, p2_u, 2, not t)
+        self.player_1 = Player(*PLAYER_POS[self.level][0], p1_u, self.level, 1, t)
+        self.player_2 = Player(*PLAYER_POS[self.level][1], p2_u, self.level, 2, not t)
 
     def update_main_menu(self):
         self.title.update()
@@ -399,9 +404,14 @@ class Game:
         self.particle_manager.update()
         self.background.update()
 
+        try:
+            gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 6))
+        except:
+            pass
+
         #? Teleporters
-        for teleporter in TELEPORTERS.values():
-            teleporter.update([self.player_1, self.player_2])
+        for teleporter in TELEPORTERS[self.level].values():
+            teleporter.update([self.player_1, self.player_2], self.level)
             if pyxel.frame_count % 20 ==0:
                 for _ in range(5):
                     x = teleporter.x + teleporter.particle_spawn_off
@@ -413,9 +423,9 @@ class Game:
                     self.particle_manager.add_particle(LineParticle(x, y, l, c, 60, s, (tx, ty), dither_duration=10))
 
         #? Levers
-        for lever, lever_info in LEVERS_DICT.items():
+        for lever, lever_info in LEVERS_DICT[self.level].items():
             t = max(0, lever_info[0] - 1)
-            LEVERS_DICT[lever][0] = t
+            LEVERS_DICT[self.level][lever][0] = t
 
             if t == 1:
                 u, v = pyxel.tilemaps[0].pget(*lever)
@@ -432,7 +442,7 @@ class Game:
 
         self.player_1.draw()
         self.player_2.draw()
-        pyxel.bltm(0, 0, 0, 0, 0, 280, 176, 0)
+        pyxel.bltm(0, 0, self.level, 0, 0, 280, 176, 0)
         self.particle_manager.draw()
 
 #? ---------- MAIN ---------- ?#
