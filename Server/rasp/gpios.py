@@ -37,7 +37,7 @@ class GPIOManager:
 
     def tag(self):
         try:
-            self.set_rgb(1, 0, 0)
+            self.rgb.color = (1, 0, 0)
         except: pass
         self.all_off()
 
@@ -66,11 +66,6 @@ class GPIOManager:
             try:
                 if occupied_slots.get(i + 1): led.on()
                 else: led.off()
-            except: pass
-
-    def set_rgb(self, r, g, b):
-        if self.rgb:
-            try: self.rgb.color = (r, g, b)
             except: pass
 
 # Instance unique

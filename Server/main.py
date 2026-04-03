@@ -95,7 +95,7 @@ class Player:
         self.friction = 0.8
 
         #? Movement
-        self.speed = 1.6
+        self.speed = 1.3
 
         #? Jump
         self.coyote_timer = 0
@@ -323,7 +323,7 @@ def right(controls:int)-> bool:
     return controls['sensors']['accel']['y'] > 3
 
 def jump(controls:int)-> bool:
-    return controls['sensors']['accel']['x'] > 6
+    return controls['sensors']['accel']['x'] > 6 or controls['button']['Press']
 
 def crouch(controls:int)-> bool:
     return controls['sensors']['accel']['x'] < -4
@@ -359,7 +359,7 @@ class Game:
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 1, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
