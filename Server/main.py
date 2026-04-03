@@ -202,7 +202,7 @@ class Player:
 
     def draw(self):
         w = self.w if self.facing_right else -self.w
-        v = 8 if crouch(self.controls) else 0
+        v = 8 if self.controls and crouch(self.controls) else 0
         pyxel.blt(self.x, self.y, 0, self.u, 0 + v, w, self.h, 0)
 
         if self.tagger and not pyxel.frame_count // 6 % 6 == 0:
