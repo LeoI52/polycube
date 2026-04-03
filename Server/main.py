@@ -95,7 +95,7 @@ class Player:
         self.friction = 0.8
 
         #? Movement
-        self.speed = 1.3
+        self.speed = 1.4
 
         #? Jump
         self.coyote_timer = 0
