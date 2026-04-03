@@ -1,51 +1,71 @@
-from gpiozero import LED, Button
+from gpiozero import RGBLED, LED, Button
+import threading
 import time
 
-
-# l1 = # led for player 1 
-# l2 = # led for player 2 
-# l3 = # led for player 3 
-# l4 = # led for player 4 
-
-
-class GameHardware:
-
+class GPIOManager:
     def __init__(self):
-        # 1. Standard LEDs (GPIO Pins 18, 23, 24, 25)
-        # These can represent Health, Ammo, Level, etc.
-        self.leds = [LED(18), LED(23), LED(24), LED(25)]
-        
-        # 2. Reset Switch (GPIO Pin 17)
-        # Using internal pull-up: Button connects to Pin 17 and GND
-        self.reset_btn = Button(17, hold_time=2) 
-        self.reset_btn.when_pressed = self._game_reset # Tap to reset game logic
-        
+        self.leds_vertes = []
+        self.rgb = None
+        self.bouton = None
+        self._stop_blink = threading.Event()
 
-    # --- LED Control Methods ---
-    def set_led_bar(self, count):
-        """Lights up 0 to 4 LEDs based on a game value (like health)."""
-        for i in range(len(self.leds)):
-            if i < count:
-                self.leds[i].on()
-            else:
-                self.leds[i].off()
+        try:
+            self.leds_vertes = [LED(27), LED(17), LED(3), LED(2)]
+            self.rgb = RGBLED(red=16, green=20, blue=21, active_high=False)
+            self.bouton = Button(13, pull_up=False, bounce_time=0.1)
+            self.bouton.when_pressed = self._on_button_pressed
+            print("GPIO: Matériel initialisé.")
+        except Exception as e:
+            print(f"GPIO: Erreur matériel (normal sur PC): {e}")
 
-    def flash_all(self, times=3):
-        """Blinks all standard LEDs (e.g., for 'Level Up')."""
-        for _ in range(times):
-            [l.on() for l in self.leds]
-            time.sleep(0.1)
-            [l.off() for l in self.leds]
-            time.sleep(0.1)
+    def _on_button_pressed(self):
+        self.flash_all(0.5)
 
-    # --- Grove RGB Methods ---
-    def set_status_color(self, r, g, b):
-        """Sets the Grove LED color (0-255)."""
+    def startup_sequence(self):
+        """Clignotement de 5 secondes pour confirmer le démarrage."""
+        print("GPIO: Lancement de la séquence de démarrage (5s)...")
+        for i in range(10): # 10 x 0.5s = 5s
+            try:
+                for led in self.leds_vertes: led.toggle()
+                if self.rgb:
+                    colors = [(1,0,0), (0,1,0), (0,0,1), (1,1,0), (1,0,1)]
+                    self.rgb.color = colors[i % len(colors)]
+            except: pass
+            time.sleep(0.5)
+        self.all_off()
+        print("GPIO: Séquence terminée.")
+
+    def all_off(self):
+        for led in self.leds_vertes:
+            try: led.off()
+            except: pass
         if self.rgb:
-            self.rgb.set_rgb(0, r, g, b)
+            try: self.rgb.off()
+            except: pass
 
-    # --- Reset Logic ---
-    def _game_reset(self):
-        print("Hardware Trigger: Resetting Game Level...")
-        # You can add a flag here that your main game reads
-        self.needs_reset = True
+    def blink_start_sequence(self):
+        threading.Thread(target=self._blink_loop, daemon=True).start()
+
+    def _blink_loop(self):
+        for _ in range(6):
+            try:
+                for led in self.leds_vertes: led.toggle()
+                if self.rgb: self.rgb.color = (1, 0.5, 0) if self.leds_vertes[0].is_active else (0, 0, 0)
+            except: pass
+            time.sleep(0.2)
+        self.all_off()
+
+    def update_controllers(self, occupied_slots):
+        for i, led in enumerate(self.leds_vertes):
+            try:
+                if occupied_slots.get(i + 1): led.on()
+                else: led.off()
+            except: pass
+
+    def set_rgb(self, r, g, b):
+        if self.rgb:
+            try: self.rgb.color = (r, g, b)
+            except: pass
+
+# Instance unique
+gpio_manager = GPIOManager()

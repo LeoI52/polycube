@@ -125,6 +125,55 @@ function finalizeCalibration(samples) {
     }, 800);
 }
 
+// --- TRANSMISSION OPTIMISÉE ---
+
+let lastSendData = {
+    b: [false, false],
+    s: [0, 0, 0, [0, 0, 0]]
+};
+
+let lastSendTime = 0;
+const SEND_INTERVAL = 25; // ~40Hz, bon compromis réactivité/charge
+const SENSOR_THRESHOLD = 0.8; // Seuil de changement pour envoyer (évite le jitter)
+
+function sendData(force = false) {
+    if (!controllerState.id || isCalibrating) return;
+
+    const now = Date.now();
+    if (!force && (now - lastSendTime < SEND_INTERVAL)) return;
+
+    // On prépare un format COMPACT pour réduire le payload JSON
+    // b: [Press, Back], s: [alpha, beta, gamma, [ax, ay, az]]
+    const currentData = {
+        b: [controllerState.buttons.Press || false, controllerState.buttons.Back || false],
+        s: [
+            controllerState.sensors.alpha,
+            controllerState.sensors.beta,
+            controllerState.sensors.gamma,
+            [
+                parseFloat(controllerState.sensors.accel.x.toFixed(3)),
+                parseFloat(controllerState.sensors.accel.y.toFixed(3)),
+                parseFloat(controllerState.sensors.accel.z.toFixed(3))
+            ]
+        ]
+    };
+
+    // Vérification si changement significatif (Delta compression manuelle)
+    const hasButtonChange = currentData.b[0] !== lastSendData.b[0] || currentData.b[1] !== lastSendData.b[1];
+    
+    const hasSensorChange = 
+        Math.abs(currentData.s[0] - lastSendData.s[0]) > SENSOR_THRESHOLD ||
+        Math.abs(currentData.s[1] - lastSendData.s[1]) > SENSOR_THRESHOLD ||
+        Math.abs(currentData.s[2] - lastSendData.s[2]) > SENSOR_THRESHOLD ||
+        Math.abs(currentData.s[3][0] - lastSendData.s[3][0]) > 0.1; // Accel plus sensible
+
+    if (force || hasButtonChange || hasSensorChange) {
+        socket.emit('controller_data', currentData);
+        lastSendData = JSON.parse(JSON.stringify(currentData));
+        lastSendTime = now;
+    }
+}
+
 // --- CAPTEURS ---
 
 function initSensorsListeners() {
@@ -151,7 +200,7 @@ function initSensorsListeners() {
     }, true);
 }
 
-// --- TRANSMISSION ---
+// --- BOUTONS ---
 
 function setupButton(id, key) {
     const el = document.getElementById(id);
@@ -159,26 +208,16 @@ function setupButton(id, key) {
     const update = (state) => {
         controllerState.buttons[key] = state;
         el.classList.toggle('active', state);
-        sendData();
+        sendData(true); // Forcer l'envoi lors d'un appui bouton
     };
     el.addEventListener('touchstart', (e) => { e.preventDefault(); update(true); });
     el.addEventListener('touchend', (e) => { e.preventDefault(); update(false); });
-    el.addEventListener('mousedown', () => update(true));
-    el.addEventListener('mouseup', () => update(false));
+    el.addEventListener('mousedown', (e) => { e.preventDefault(); update(true); });
+    el.addEventListener('mouseup', (e) => { e.preventDefault(); update(false); });
 }
 
 setupButton('btn-H', 'Press');
 setupButton('btn-Pause', 'Back');
-
-let lastSend = 0;
-function sendData() {
-    if (!controllerState.id || isCalibrating) return;
-    const now = Date.now();
-    if (now - lastSend > 30) { 
-        socket.emit('controller_data', controllerState);
-        lastSend = now;
-    }
-}
 
 socket.on('connect', () => {
     statusEl.innerText = "● Connected";
