@@ -192,6 +192,7 @@ class Player:
             self.tagged_timer = 60
             self.tagger = False
             other.tagger = True
+            gpio_manager.tag()
 
         if self.controls:
             self._handle_movement()
@@ -358,7 +359,7 @@ class Game:
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 1, fullscreen=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
@@ -383,7 +384,7 @@ class Game:
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
-        self.level = 1
+        self.level = 0
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
@@ -409,6 +410,11 @@ class Game:
         self.player_2.update(self.player_1)
         self.particle_manager.update()
         self.background.update()
+
+        if self.player_1.tagger:
+            gpio_manager.update_controllers({1:True, 2:True})
+        else:
+            gpio_manager.update_controllers({3:True, 4:True})
 
         try:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 6))
