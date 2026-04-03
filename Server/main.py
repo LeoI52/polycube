@@ -42,7 +42,7 @@ class ButtonManager:
         self.move_cooldown = 45
 
     def update(self):
-        p1_id, p1_data = get_player_data("PLAYER-1")
+        p1_id, p1_data = get_player_data("JOUEUR-1")
 
         if not p1_data or not self.buttons:
             return
@@ -184,7 +184,7 @@ class Player:
                     break
     
     def update(self, other):
-        _, self.controls = get_player_data("JOUEUR-1" if self.player_number == 1 else "JOUEUR-2")
+        _, self.controls = get_player_data(f"JOUEUR-{self.player_number}")
         self._handle_timers()
         self._handle_physics()
 
@@ -320,7 +320,7 @@ def right(controls:int)-> bool:
     return controls['sensors']['accel']['y'] > 3
 
 def jump(controls:int)-> bool:
-    return controls['sensors']['accel']['x'] > 4
+    return controls['sensors']['accel']['x'] > 6
 
 def crouch(controls:int)-> bool:
     return controls['sensors']['accel']['x'] < -4
@@ -356,7 +356,7 @@ class Game:
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
