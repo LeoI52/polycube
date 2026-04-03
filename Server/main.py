@@ -314,10 +314,10 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
                         pyxel.pset(x + px + ox, y + py + oy, col)
 
 def left(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] > 4
+    return controls['sensors']['accel']['y'] < -4
 
 def right(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] < -4
+    return controls['sensors']['accel']['y'] > 4
 
 def jump(controls:int)-> bool:
     return controls['sensors']['accel']['x'] > 4
@@ -332,15 +332,18 @@ LEVER_TILES = [(3,1),(4,1)]
 
 PLAYER_POS = [
     [[16, 24], [264, 160]],
+    [[16, 24], [264, 160]],
 ]
 
 LEVERS_DICT = [
     #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
     {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 480]},
+    {(33, 1):[0, (3,2), (4,2), [(24,8),(24,9),(24,10),(24,11),(24,12),(24,13),(24,14),(24,17),(24,18),(24,19),(24,20),(11,7),(11,8),(11,9),(11,10),(11,11),(11,12),(11,13),(11,14)], 480]}
 ]
 
 TELEPORTERS = [
     {1:Teleporter(0, 18*8, 8, 24, 16, 20*8, 2, 8), 2:Teleporter(34*8, 8, 8, 24, 32*8, 24, 1)},
+    {1:Teleporter(0, 18*8, 8, 24, 16, 20*8, 2, 8), 2:Teleporter(34*8, 9*8, 8, 24, 32*8, 11*8, 1)},
 ]
 
 #? ---------- GAME ---------- ?#
@@ -377,7 +380,7 @@ class Game:
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
-        self.level = 0
+        self.level = 1
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
