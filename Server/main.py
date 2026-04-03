@@ -377,6 +377,7 @@ class Game:
 
     def saka_act(self):
         if gpio_manager: gpio_manager.blink_start_sequence()
+        self.init_saka()
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
