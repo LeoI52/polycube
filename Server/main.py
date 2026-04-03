@@ -184,7 +184,7 @@ class Player:
                     break
     
     def update(self, other):
-        _, self.controls = get_player_data("PLAYER-1" if self.player_number == 1 else "PLAYER-2")
+        _, self.controls = get_player_data("JOUEUR-1" if self.player_number == 1 else "JOUEUR-2")
         self._handle_timers()
         self._handle_physics()
 
@@ -314,10 +314,10 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
                         pyxel.pset(x + px + ox, y + py + oy, col)
 
 def left(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] < -4
+    return controls['sensors']['accel']['y'] < -3
 
 def right(controls:int)-> bool:
-    return controls['sensors']['accel']['y'] > 4
+    return controls['sensors']['accel']['y'] > 3
 
 def jump(controls:int)-> bool:
     return controls['sensors']['accel']['x'] > 4
