@@ -234,10 +234,12 @@ def vibrate_controller(ctrl_id, duration=50):
 def get_player_data(player_name:str):
     controllers = server.controllers.copy()
     if not controllers:
-            return None, None
+        return None, None
         
-    p1_id = next((cid for cid in controllers if player_name in cid), next(iter(controllers)))
-    return p1_id, controllers[p1_id]
+    p_id = next((cid for cid in controllers if player_name in cid), None)
+    if p_id:
+        return p_id, controllers[p_id]
+    return None, None
 
 def collision_rect_tiles(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)-> bool:
     start_tile_x = x // 8
