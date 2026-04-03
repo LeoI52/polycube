@@ -1,8 +1,22 @@
 """
 @author : Léo Imbert
 @created : 13/03/2026
-@updated : 27/03/2026
+@updated : 03/04/2026
 """
+
+#? ---------- CHARGEMENT GPIO ---------- ?#
+
+from rasp.gpios import gpio_manager
+gpio_manager.startup_sequence()
+
+#? ---------- CHARGEMENT DU SERVEUR ---------- ?#
+
+import server
+import threading
+
+def run_server():
+    server.start_server()
+threading.Thread(target=run_server, daemon=True).start()
 
 #? ---------- IMPORTATIONS ---------- ?#
 
@@ -29,10 +43,6 @@ class ButtonManager:
 
     def update(self):
         p1_id, p1_data = get_player_data("PLAYER-1")
-        
-        #! ---------- A ENLEVER SUR LA VERSION FINALE
-        self.buttons[self.selected_index].update()
-        #! ----------
 
         if not p1_data or not self.buttons:
             return
@@ -191,11 +201,11 @@ class Player:
 
     def draw(self):
         w = self.w if self.facing_right else -self.w
-        v = 8 if crouch(self.player_number) else 0
+        v = 8 if crouch(self.controls) else 0
         pyxel.blt(self.x, self.y, 0, self.u, 0 + v, w, self.h, 0)
 
         if self.tagger and not pyxel.frame_count // 6 % 6 == 0:
-            blt_outline(self.x,self.y,0,self.u,v,8,8,col=8,flip_x=not self.facing_right)
+            blt_outline(self.x, self.y, 0, self.u, v, 8, 8, col=8, flip_x=not self.facing_right)
 
 class Teleproter:
 
@@ -221,11 +231,12 @@ def vibrate_controller(ctrl_id, duration=50):
         server.socketio.emit('vibrate', {'duration': duration}, room=controller_data['sid'])
 
 def get_player_data(player_name:str):
-    if not server.controllers:
+    controllers = server.controllers.copy()
+    if not controllers:
             return None, None
         
-    p1_id = next((id for id in server.controllers if player_name in id), list(server.controllers.keys())[0])
-    return p1_id, server.controllers[p1_id]
+    p1_id = next((cid for cid in controllers if player_name in cid), next(iter(controllers)))
+    return p1_id, controllers[p1_id]
 
 def collision_rect_tiles(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)-> bool:
     start_tile_x = x // 8
@@ -302,25 +313,16 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
                         pyxel.pset(x + px + ox, y + py + oy, col)
 
 def left(controls:int)-> bool:
-    if controls == 1:
-        return pyxel.btn(pyxel.KEY_A) or pyxel.btn(pyxel.KEY_Q) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) < -8000
-    return pyxel.btn(pyxel.KEY_LEFT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) < -8000
+    return controls['sensors']['accel']['y'] > 4
 
 def right(controls:int)-> bool:
-    if controls == 1:
-        return pyxel.btn(pyxel.KEY_D) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) > 8000
-    return pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) > 8000
+    return controls['sensors']['accel']['y'] < -4
 
 def jump(controls:int)-> bool:
-    return controls['sensors']
-    if controls == 1:
-        return pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_W) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)
-    return pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD3_BUTTON_A)
+    return controls['sensors']['accel']['x'] > 4
 
 def crouch(controls:int)-> bool:
-    if controls == 1:
-        return pyxel.btn(pyxel.KEY_S) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_X)
-    return pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD3_BUTTON_X)
+    return controls['sensors']['accel']['x'] < -4
 
 #? ---------- SAKA CONSTANTS ---------- ?#
 
@@ -342,10 +344,6 @@ TELEPORTERS = {
 class Game:
 
     def __init__(self):
-        #? Server Init
-        self.server = threading.Thread(target=server.start_server, daemon=True)
-        self.server.start()
-
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
@@ -354,11 +352,11 @@ class Game:
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
 
         #? Main Menu Variables
-        self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
+        self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
         self.main_menu_buttons = [
-            Button("Saka", 40, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
-            Button("Pong", 40, 156, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT, on_click=lambda : print("go to pong")),
-            Button("Far West", 240, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=lambda : print("go to far west")),
+            Button("Saka", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
+            Button("Pong", 40, 156, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT),
+            Button("Far West", 240, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
@@ -371,7 +369,7 @@ class Game:
         self.pyxel_manager.run()
 
     def saka_act(self):
-        print("saka")
+        if gpio_manager: gpio_manager.blink_start_sequence()
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
@@ -386,6 +384,8 @@ class Game:
     def update_main_menu(self):
         self.title.update()
         self.main_menu_button_manager.update()
+        if gpio_manager and pyxel.frame_count % 30 == 0:
+            gpio_manager.update_controllers(server.occupied_slots)
 
     def draw_main_menu(self):
         pyxel.cls(0)
