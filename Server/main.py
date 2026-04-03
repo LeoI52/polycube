@@ -12,10 +12,10 @@ import server
 
 #? ---------- CONSTANTS ---------- ?#
 
-PALETTE = [0x000000, 0x2e222f, 0x353658, 0x83769C, 0x686b72, 0xc5cddb, 0xffffff, 0x5ee9e9, 
-           0x2890dc, 0x1831a7, 0x053239, 0x005f41, 0x08b23b, 0x47f641, 0xe8ff75, 0xfbbe82, 
-           0xde9751, 0xb66831, 0x8a4926, 0x461c14, 0x1e090d, 0x720d0d, 0x813704, 0xda2424, 
-           0xef6e10, 0xecab11, 0xece910, 0xf78d8d, 0xf94e6d, 0xc12458, 0x841252, 0x3d083b, 0x000000]
+PALETTE = [0x000000, 0xbe4a2f, 0xd77643, 0xead4aa, 0xe4a672, 0xb86f50, 0x733e39, 0x3e2731, 
+           0xa22633, 0xe43b44, 0xf77622, 0xfeae34, 0xfee761, 0x63c74d, 0x3e8948, 0x265c42, 
+           0x193c3e, 0x124e89, 0x0099db, 0x2ce8f5, 0xffffff, 0xc0cbdc, 0x8b9bb4, 0x5a6988, 
+           0x3a4466, 0x262b44, 0xff0044, 0x68386c, 0xb55088, 0xf6757a, 0xe8b796, 0xc28569, 0x000000]
 
 #? ---------- CLASSES ---------- ?#
 
@@ -27,15 +27,8 @@ class ButtonManager:
         self.last_move_time = 0
         self.move_cooldown = 45
 
-    def get_player1(self):
-        if not server.controllers:
-            return None, None
-        
-        p1_id = next((id for id in server.controllers if "PLAYER-1" in id), list(server.controllers.keys())[0])
-        return p1_id, server.controllers[p1_id]
-
     def update(self):
-        p1_id, p1_data = self.get_player1()
+        p1_id, p1_data = get_player_data("PLAYER-1")
         
         #! ---------- A ENLEVER SUR LA VERSION FINALE
         self.buttons[self.selected_index].update()
@@ -70,7 +63,7 @@ class ButtonManager:
 
 class Player:
 
-    def __init__(self, x:int, y:int, player_number:int, tagger:bool):
+    def __init__(self, x:int, y:int, u:int, player_number:int, tagger:bool):
         self.x, self.y = x, y
         self.w, self.h = 8, 8
 
@@ -79,7 +72,8 @@ class Player:
         self.tagger = tagger
         self.tagged_timer = 0
 
-        self.u = random.randint(0, 12) * 8
+        self.u = u
+        self.controls = None
 
         #? Velocity
         self.velocity_x = 0
@@ -122,17 +116,17 @@ class Player:
             self.coyote_timer = self.coyote_time
 
     def _handle_movement(self):
-        if left(self.player_number):
+        if left(self.controls):
             self.velocity_x = -self.speed
             self.facing_right = False
-        if right(self.player_number):
+        if right(self.controls):
             self.velocity_x = self.speed
             self.facing_right = True
 
-        if jump(self.player_number) and ((self.on_ground or self.coyote_timer > 0) and not self.jumping):
+        if jump(self.controls) and ((self.on_ground or self.coyote_timer > 0) and not self.jumping):
             self.velocity_y = -self.jump_power
             self.jumping = True
-        elif jump(self.player_number):
+        elif jump(self.controls):
             self.jump_buffer_timer = self.jump_buffer_time
 
         if self.on_ground and self.jump_buffer_timer > 0:
@@ -179,6 +173,7 @@ class Player:
                     break
     
     def update(self, other):
+        _, self.controls = get_player_data("PLAYER-1" if self.player_number == 1 else "PLAYER-2")
         self._handle_timers()
         self._handle_physics()
 
@@ -187,7 +182,8 @@ class Player:
             self.tagger = False
             other.tagger = True
 
-        self._handle_movement()
+        if self.controls:
+            self._handle_movement()
         self._handle_levers()
 
         self._update_velocity_x()
@@ -223,6 +219,13 @@ def vibrate_controller(ctrl_id, duration=50):
     controller_data = server.controllers.get(ctrl_id)
     if controller_data and 'sid' in controller_data:
         server.socketio.emit('vibrate', {'duration': duration}, room=controller_data['sid'])
+
+def get_player_data(player_name:str):
+    if not server.controllers:
+            return None, None
+        
+    p1_id = next((id for id in server.controllers if player_name in id), list(server.controllers.keys())[0])
+    return p1_id, server.controllers[p1_id]
 
 def collision_rect_tiles(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)-> bool:
     start_tile_x = x // 8
@@ -298,28 +301,24 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
                     if nc == colkey:
                         pyxel.pset(x + px + ox, y + py + oy, col)
 
-def left(player_number:int)-> bool:
-    if player_number == 1:
+def left(controls:int)-> bool:
+    if controls == 1:
         return pyxel.btn(pyxel.KEY_A) or pyxel.btn(pyxel.KEY_Q) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) < -8000
     return pyxel.btn(pyxel.KEY_LEFT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) < -8000
 
-def right(player_number:int)-> bool:
-    if player_number == 1:
+def right(controls:int)-> bool:
+    if controls == 1:
         return pyxel.btn(pyxel.KEY_D) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) > 8000
     return pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) > 8000
 
-def jump(player_number:int)-> bool:
-    if player_number == 1:
+def jump(controls:int)-> bool:
+    return controls['sensors']
+    if controls == 1:
         return pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_W) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)
     return pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD3_BUTTON_A)
 
-def interact(player_number:int)-> bool:
-    if player_number == 1:
-        return pyxel.btnp(pyxel.KEY_S) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_X)
-    return pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.GAMEPAD3_BUTTON_X)
-
-def crouch(player_number:int)-> bool:
-    if player_number == 1:
+def crouch(controls:int)-> bool:
+    if controls == 1:
         return pyxel.btn(pyxel.KEY_S) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_X)
     return pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD3_BUTTON_X)
 
@@ -366,9 +365,7 @@ class Game:
         #? Saka Varaibles
         self.background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
-        t = random.choice([False, True])
-        self.player_1 = Player(10, 10, 1, t)
-        self.player_2 = Player(262, 160, 2, not t)
+        self.init_saka()
 
         #? Run
         self.pyxel_manager.run()
@@ -376,6 +373,15 @@ class Game:
     def saka_act(self):
         print("saka")
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
+
+    def init_saka(self):
+        t = random.choice([False, True])
+        p1_u = random.randint(0, 12) * 8
+        p2_u = random.randint(0, 12) * 8
+        while p2_u == p1_u:
+            p2_u = random.randint(0, 12) * 8
+        self.player_1 = Player(10, 10, p1_u, 1, t)
+        self.player_2 = Player(262, 160, p2_u, 2, not t)
 
     def update_main_menu(self):
         self.title.update()
@@ -392,12 +398,6 @@ class Game:
         self.player_2.update(self.player_1)
         self.particle_manager.update()
         self.background.update()
-
-        if pyxel.btnp(pyxel.KEY_R):
-            self.particle_manager = ParticleManager()
-            t = random.choice([False, True])
-            self.player_1 = Player(10, 10, 1, t)
-            self.player_2 = Player(262, 160, 2, not t)
 
         #? Teleporters
         for teleporter in TELEPORTERS.values():
