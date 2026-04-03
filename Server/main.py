@@ -323,7 +323,7 @@ def right(controls:int)-> bool:
     return controls['sensors']['accel']['y'] > 3
 
 def jump(controls:int)-> bool:
-    return controls['sensors']['accel']['x'] > 6 or controls['button']['Press']
+    return controls['sensors']['accel']['x'] > 6 or controls['buttons']['Press']
 
 def crouch(controls:int)-> bool:
     return controls['sensors']['accel']['x'] < -4
