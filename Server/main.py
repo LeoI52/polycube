@@ -384,7 +384,7 @@ class Game:
         self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
 
     def init_saka(self):
-        self.level = 0
+        self.level = random.randint(0, 1)
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
