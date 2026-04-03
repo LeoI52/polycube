@@ -137,6 +137,7 @@ class Player:
         if jump(self.controls) and ((self.on_ground or self.coyote_timer > 0) and not self.jumping):
             self.velocity_y = -self.jump_power
             self.jumping = True
+            pyxel.play(0, 0)
         elif jump(self.controls):
             self.jump_buffer_timer = self.jump_buffer_time
 
@@ -149,16 +150,16 @@ class Player:
         tiles = tiles_in_rect(self.x- 4, self.y, self.w + 8, self.h, LEVER_TILES, self.level)
         if tiles:
             timer, door_tile, hollow_tile, door_tiles, timer_duration = LEVERS_DICT[self.level][tiles[0]]
-            u, v = pyxel.tilemaps[0].pget(*tiles[0])
+            u, v = pyxel.tilemaps[self.level].pget(*tiles[0])
 
             if timer == 0:
-                pyxel.tilemaps[0].pset(*tiles[0], (u + 1, v))
+                pyxel.tilemaps[self.level].pset(*tiles[0], (u + 1, v))
                 LEVERS_DICT[self.level][tiles[0]][0] = timer_duration
                 for tx, ty in door_tiles:
-                    if pyxel.tilemaps[0].pget(tx, ty) == door_tile:
-                        pyxel.tilemaps[0].pset(tx, ty, hollow_tile)
+                    if pyxel.tilemaps[self.level].pget(tx, ty) == door_tile:
+                        pyxel.tilemaps[self.level].pset(tx, ty, hollow_tile)
                     else:
-                        pyxel.tilemaps[0].pset(tx, ty, door_tile)
+                        pyxel.tilemaps[self.level].pset(tx, ty, door_tile)
 
     def _update_velocity_x(self):
         if self.velocity_x != 0:
