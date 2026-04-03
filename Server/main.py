@@ -42,7 +42,7 @@ class ButtonManager:
         self.move_cooldown = 45
 
     def update(self):
-        p1_id, p1_data = get_player_data("JOUEUR-1")
+        p1_id, p1_data = get_player_data("PLAYER-1")
 
         if not p1_data or not self.buttons:
             return
@@ -184,7 +184,7 @@ class Player:
                     break
     
     def update(self, other):
-        _, self.controls = get_player_data(f"JOUEUR-{self.player_number}")
+        _, self.controls = get_player_data(f"PLAYER-{self.player_number}")
         self._handle_timers()
         self._handle_physics()
 
