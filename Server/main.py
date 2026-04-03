@@ -1,0 +1,441 @@
+"""
+@author : Léo Imbert
+@created : 13/03/2026
+@updated : 27/03/2026
+"""
+
+#? ---------- IMPORTATIONS ---------- ?#
+
+from utils import *
+import threading
+import server
+
+#? ---------- CONSTANTS ---------- ?#
+
+PALETTE = [0x000000, 0xbe4a2f, 0xd77643, 0xead4aa, 0xe4a672, 0xb86f50, 0x733e39, 0x3e2731, 
+           0xa22633, 0xe43b44, 0xf77622, 0xfeae34, 0xfee761, 0x63c74d, 0x3e8948, 0x265c42, 
+           0x193c3e, 0x124e89, 0x0099db, 0x2ce8f5, 0xffffff, 0xc0cbdc, 0x8b9bb4, 0x5a6988, 
+           0x3a4466, 0x262b44, 0xff0044, 0x68386c, 0xb55088, 0xf6757a, 0xe8b796, 0xc28569, 0x000000]
+
+#? ---------- CLASSES ---------- ?#
+
+class ButtonManager:
+
+    def __init__(self, buttons:list[Button]):
+        self.buttons = buttons
+        self.selected_index = 0
+        self.last_move_time = 0
+        self.move_cooldown = 45
+
+    def update(self):
+        p1_id, p1_data = get_player_data("PLAYER-1")
+        
+        #! ---------- A ENLEVER SUR LA VERSION FINALE
+        self.buttons[self.selected_index].update()
+        #! ----------
+
+        if not p1_data or not self.buttons:
+            return
+
+        accel_x = p1_data['sensors']['accel']['x']
+        btn_h = p1_data['buttons']['Press']
+
+        if pyxel.frame_count - self.last_move_time > self.move_cooldown:
+            if accel_x > 4:
+                self.selected_index = (self.selected_index + 1) % len(self.buttons)
+                vibrate_controller(p1_id, 30)
+                self.last_move_time = pyxel.frame_count
+
+            elif accel_x < -4:
+                self.selected_index = (self.selected_index - 1) % len(self.buttons)
+                vibrate_controller(p1_id, 30)
+                self.last_move_time = pyxel.frame_count
+
+        if btn_h:
+            vibrate_controller(p1_id, 100)
+            button = self.buttons[self.selected_index]
+            if button.on_click:
+                button.on_click()
+
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        for i, button in enumerate(self.buttons):
+            button.draw((i == self.selected_index), camera_x=camera_x, camera_y=camera_y)
+
+class Player:
+
+    def __init__(self, x:int, y:int, u:int, player_number:int, tagger:bool):
+        self.x, self.y = x, y
+        self.w, self.h = 8, 8
+
+        #? Others
+        self.player_number = player_number
+        self.tagger = tagger
+        self.tagged_timer = 0
+
+        self.u = u
+        self.controls = None
+
+        #? Velocity
+        self.velocity_x = 0
+        self.vx_r = 0
+        self.velocity_y = 0
+        self.max_velocity_y = 6
+        self.gravity = 0.4
+        self.friction = 0.8
+
+        #? Movement
+        self.speed = 1.6
+
+        #? Jump
+        self.coyote_timer = 0
+        self.coyote_time = 6
+        self.jump_buffer_timer = 0
+        self.jump_buffer_time = 12
+        self.jump_power = 5.5
+        self.jumping = False
+
+        #? Flares
+        self.facing_right = True if player_number == 1 else False
+        self.on_ground = False
+
+    def _handle_timers(self):
+        self.coyote_timer = max(0, self.coyote_timer - 1)
+        self.tagged_timer = max(0, self.tagged_timer - 1)
+        self.jump_buffer_timer = max(0, self.jump_buffer_timer - 1)
+
+    def _handle_physics(self):
+        self.velocity_y = min(self.velocity_y + self.gravity, self.max_velocity_y)
+        self.velocity_x *= self.friction
+
+        self.on_ground = collision_rect_tiles(self.x, self.y + 1, self.w, self.h, COLLISION_TILES)
+
+        if self.on_ground:
+            if not self.jumping:
+                self.velocity_y = 0
+            self.jumping = False
+            self.coyote_timer = self.coyote_time
+
+    def _handle_movement(self):
+        if left(self.controls):
+            self.velocity_x = -self.speed
+            self.facing_right = False
+        if right(self.controls):
+            self.velocity_x = self.speed
+            self.facing_right = True
+
+        if jump(self.controls) and ((self.on_ground or self.coyote_timer > 0) and not self.jumping):
+            self.velocity_y = -self.jump_power
+            self.jumping = True
+        elif jump(self.controls):
+            self.jump_buffer_timer = self.jump_buffer_time
+
+        if self.on_ground and self.jump_buffer_timer > 0:
+            self.velocity_y = -self.jump_power
+            self.jumping = True
+            self.jump_buffer_timer = 0
+
+    def _handle_levers(self):
+        tiles = tiles_in_rect(self.x- 4, self.y, self.w + 8, self.h, LEVER_TILES)
+        if tiles:
+            timer, door_tile, hollow_tile, door_tiles, timer_duration = LEVERS_DICT[tiles[0]]
+            u, v = pyxel.tilemaps[0].pget(*tiles[0])
+
+            if timer == 0:
+                pyxel.tilemaps[0].pset(*tiles[0], (u + 1, v))
+                LEVERS_DICT[tiles[0]][0] = timer_duration
+                for tx, ty in door_tiles:
+                    if pyxel.tilemaps[0].pget(tx, ty) == door_tile:
+                        pyxel.tilemaps[0].pset(tx, ty, hollow_tile)
+                    else:
+                        pyxel.tilemaps[0].pset(tx, ty, door_tile)
+
+    def _update_velocity_x(self):
+        if self.velocity_x != 0:
+            self.velocity_x += self.vx_r
+            self.vx_r = self.velocity_x - int(self.velocity_x)
+            self.velocity_x -= self.vx_r
+            step_x = 1 if self.velocity_x > 0 else -1
+            for _ in range(int(abs(self.velocity_x))):
+                if not collision_rect_tiles(self.x + step_x, self.y, self.w, self.h, COLLISION_TILES) and 0 <= self.x + step_x and self.x + self.w + step_x <= pyxel.width:
+                    self.x += step_x
+                else:
+                    self.velocity_x = 0
+                    break
+
+    def _update_velocity_y(self):
+        if self.velocity_y != 0:
+            step_y = 1 if self.velocity_y > 0 else -1
+            for _ in range(int(abs(self.velocity_y))):
+                if not collision_rect_tiles(self.x, self.y + step_y, self.w, self.h, COLLISION_TILES) and 0 <= self.y + step_y and self.y + self.h +step_y <= pyxel.height:
+                    self.y += step_y
+                else:
+                    self.velocity_y = 0
+                    break
+    
+    def update(self, other):
+        _, self.controls = get_player_data("PLAYER-1" if self.player_number == 1 else "PLAYER-2")
+        self._handle_timers()
+        self._handle_physics()
+
+        if collision_rect_rect(self.x, self.y, self.w, self.h, other.x, other.y, other.w, other.h) and self.tagger and other.tagged_timer == 0:
+            self.tagged_timer = 60
+            self.tagger = False
+            other.tagger = True
+
+        if self.controls:
+            self._handle_movement()
+        self._handle_levers()
+
+        self._update_velocity_x()
+        self._update_velocity_y()
+
+    def draw(self):
+        w = self.w if self.facing_right else -self.w
+        v = 8 if crouch(self.player_number) else 0
+        pyxel.blt(self.x, self.y, 0, self.u, 0 + v, w, self.h, 0)
+
+        if self.tagger and not pyxel.frame_count // 6 % 6 == 0:
+            blt_outline(self.x,self.y,0,self.u,v,8,8,col=8,flip_x=not self.facing_right)
+
+class Teleproter:
+
+    def __init__(self, x:int, y:int, w:int, h:int, x_spawn:int, y_spawn:int, teleporter_id:int, particle_spawn_off:int=0):
+        self.x, self.y = x, y
+        self.w, self.h = w, h
+        self.particle_spawn_off = particle_spawn_off
+        self.x_spawn, self.y_spawn = x_spawn, y_spawn
+        self.teleporter_id = teleporter_id
+
+    def update(self, players:list):
+        for player in players:
+            if collision_rect_rect(player.x, player.y, player.w, player.h, self.x, self.y, self.w, self.h):
+                nx, ny = TELEPORTERS[self.teleporter_id].x_spawn, TELEPORTERS[self.teleporter_id].y_spawn
+                player.x = nx
+                player.y = ny
+
+#? ---------- FUNCTIONS ---------- ?#
+
+def vibrate_controller(ctrl_id, duration=50):
+    controller_data = server.controllers.get(ctrl_id)
+    if controller_data and 'sid' in controller_data:
+        server.socketio.emit('vibrate', {'duration': duration}, room=controller_data['sid'])
+
+def get_player_data(player_name:str):
+    if not server.controllers:
+            return None, None
+        
+    p1_id = next((id for id in server.controllers if player_name in id), list(server.controllers.keys())[0])
+    return p1_id, server.controllers[p1_id]
+
+def collision_rect_tiles(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)-> bool:
+    start_tile_x = x // 8
+    start_tile_y = y // 8
+    end_tile_x = (x + w - 1) // 8
+    end_tile_y = (y + h - 1) // 8
+
+    tilemaps = [tilemaps] if isinstance(tilemaps, int) else tilemaps
+    tilemap_w, tilemap_h = pyxel.tilemaps[tilemaps[0]].width, pyxel.tilemaps[tilemaps[0]].height
+
+    start_tile_x = int(clamp(start_tile_x, 0, tilemap_w - 1))
+    start_tile_y = int(clamp(start_tile_y, 0, tilemap_h - 1))
+    end_tile_x = int(clamp(end_tile_x, 0, tilemap_w - 1))
+    end_tile_y = int(clamp(end_tile_y, 0, tilemap_h - 1))
+
+
+    for tile_y in range(start_tile_y, end_tile_y + 1):
+        for tile_x in range(start_tile_x, end_tile_x + 1):
+            for tilemap_id in tilemaps:
+                tile_id = pyxel.tilemaps[tilemap_id].pget(tile_x, tile_y)
+
+                if tile_id in tiles:
+                    return True
+    
+    return False
+    
+def tiles_in_rect(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)-> list:
+    result = []
+
+    start_tile_x = x // 8
+    start_tile_y = y // 8
+    end_tile_x = (x + w - 1) // 8
+    end_tile_y = (y + h - 1) // 8
+
+    tilemaps = [tilemaps] if isinstance(tilemaps, int) else tilemaps
+    tilemap_w, tilemap_h = pyxel.tilemaps[tilemaps[0]].width, pyxel.tilemaps[tilemaps[0]].height
+
+    start_tile_x = int(clamp(start_tile_x, 0, tilemap_w - 1))
+    start_tile_y = int(clamp(start_tile_y, 0, tilemap_h - 1))
+    end_tile_x = int(clamp(end_tile_x, 0, tilemap_w - 1))
+    end_tile_y = int(clamp(end_tile_y, 0, tilemap_h - 1))
+
+
+    for tile_y in range(start_tile_y, end_tile_y + 1):
+        for tile_x in range(start_tile_x, end_tile_x + 1):
+            for tilemap_id in tilemaps:
+                tile_id = pyxel.tilemaps[tilemap_id].pget(tile_x, tile_y)
+
+                if tile_id in tiles:
+                    result.append((tile_x, tile_y))
+
+    return result
+
+def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip_x:bool=False, colkey:int=0):
+    for py in range(h):
+        for px in range(w):
+            sx = u + (w - 1 - px if flip_x else px)
+            sy = v + py
+
+            c = pyxel.images[img].pget(sx, sy)
+            if c == colkey:
+                continue
+
+            for ox, oy in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = px + ox, py + oy
+
+                if nx < 0 or ny < 0 or nx >= w or ny >= h:
+                    pyxel.pset(x + px + ox, y + py + oy, col)
+                else:
+                    nsx = u + (w - 1 - nx if flip_x else nx)
+                    nsy = v + ny
+                    nc = pyxel.images[img].pget(nsx, nsy)
+                    if nc == colkey:
+                        pyxel.pset(x + px + ox, y + py + oy, col)
+
+def left(controls:int)-> bool:
+    if controls == 1:
+        return pyxel.btn(pyxel.KEY_A) or pyxel.btn(pyxel.KEY_Q) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) < -8000
+    return pyxel.btn(pyxel.KEY_LEFT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) < -8000
+
+def right(controls:int)-> bool:
+    if controls == 1:
+        return pyxel.btn(pyxel.KEY_D) or pyxel.btnv(pyxel.GAMEPAD1_AXIS_LEFTX) > 8000
+    return pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btnv(pyxel.GAMEPAD3_AXIS_LEFTX) > 8000
+
+def jump(controls:int)-> bool:
+    return controls['sensors']
+    if controls == 1:
+        return pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_W) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)
+    return pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD3_BUTTON_A)
+
+def crouch(controls:int)-> bool:
+    if controls == 1:
+        return pyxel.btn(pyxel.KEY_S) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_X)
+    return pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD3_BUTTON_X)
+
+#? ---------- SAKA CONSTANTS ---------- ?#
+
+COLLISION_TILES = [(0,1),(3,2)]
+
+LEVER_TILES = [(3,1),(4,1)]
+LEVERS_DICT = {
+    #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
+    (11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 480]
+}
+
+TELEPORTERS = {
+    1:Teleproter(0, 18*8, 8, 24, 16, 20*8, 2, 8),
+    2:Teleproter(34*8, 8, 8, 24, 32*8, 24, 1)
+}
+
+#? ---------- GAME ---------- ?#
+
+class Game:
+
+    def __init__(self):
+        #? Server Init
+        self.server = threading.Thread(target=server.start_server, daemon=True)
+        self.server.start()
+
+        #? Pyxel Init
+        scenes = [
+            Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
+            Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
+        ]
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, mouse=True, fullscreen=True)
+
+        #? Main Menu Variables
+        self.title = Text("PolyCube", 140, 30, [24, 25, 8, 9], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=1)
+        self.main_menu_buttons = [
+            Button("Saka", 40, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
+            Button("Pong", 40, 156, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT, on_click=lambda : print("go to pong")),
+            Button("Far West", 240, 80, 8, 25, 9, 24, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=lambda : print("go to far west")),
+        ]
+        self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
+
+        #? Saka Varaibles
+        self.background = MatrixRainBackground(16, 0.5, [21, 22, 23])
+        self.particle_manager = ParticleManager()
+        self.init_saka()
+
+        #? Run
+        self.pyxel_manager.run()
+
+    def saka_act(self):
+        print("saka")
+        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
+
+    def init_saka(self):
+        t = random.choice([False, True])
+        p1_u = random.randint(0, 12) * 8
+        p2_u = random.randint(0, 12) * 8
+        while p2_u == p1_u:
+            p2_u = random.randint(0, 12) * 8
+        self.player_1 = Player(10, 10, p1_u, 1, t)
+        self.player_2 = Player(262, 160, p2_u, 2, not t)
+
+    def update_main_menu(self):
+        self.title.update()
+        self.main_menu_button_manager.update()
+
+    def draw_main_menu(self):
+        pyxel.cls(0)
+
+        self.title.draw()
+        self.main_menu_button_manager.draw()
+
+    def update_saka(self):
+        self.player_1.update(self.player_2)
+        self.player_2.update(self.player_1)
+        self.particle_manager.update()
+        self.background.update()
+
+        #? Teleporters
+        for teleporter in TELEPORTERS.values():
+            teleporter.update([self.player_1, self.player_2])
+            if pyxel.frame_count % 20 ==0:
+                for _ in range(5):
+                    x = teleporter.x + teleporter.particle_spawn_off
+                    y = teleporter.y + random.randint(2, teleporter.h - 4)
+                    l = random.randint(2, 6)
+                    c = [random.choice([27, 28]) for _ in range(5)]
+                    s = random.uniform(0.2, 0.4)
+                    tx, ty = teleporter.x_spawn, y + random.randint(-5, 5)
+                    self.particle_manager.add_particle(LineParticle(x, y, l, c, 60, s, (tx, ty), dither_duration=10))
+
+        #? Levers
+        for lever, lever_info in LEVERS_DICT.items():
+            t = max(0, lever_info[0] - 1)
+            LEVERS_DICT[lever][0] = t
+
+            if t == 1:
+                u, v = pyxel.tilemaps[0].pget(*lever)
+                pyxel.tilemaps[0].pset(*lever, (u - 1, v))
+                for tx, ty in lever_info[3]:
+                    if pyxel.tilemaps[0].pget(tx, ty) == lever_info[1]:
+                        pyxel.tilemaps[0].pset(tx, ty, lever_info[2])
+                    else:
+                        pyxel.tilemaps[0].pset(tx, ty, lever_info[1])
+
+    def draw_saka(self):
+        pyxel.cls(0)
+        self.background.draw()
+
+        self.player_1.draw()
+        self.player_2.draw()
+        pyxel.bltm(0, 0, 0, 0, 0, 280, 176, 0)
+        self.particle_manager.draw()
+
+#? ---------- MAIN ---------- ?#
+
+if __name__ == "__main__":
+    Game()
