@@ -50,7 +50,7 @@ def handle_select_slot(requested_slot):
     slot = int(requested_slot)
     if slot in occupied_slots and (occupied_slots[slot] is None or occupied_slots[slot] == request.sid):
         occupied_slots[slot] = request.sid
-        ctrl_id = f"JOUEUR-{slot}"
+        ctrl_id = f"PLAYER-{slot}"
         controllers[ctrl_id] = {
             'id': ctrl_id,
             'sid': request.sid,
@@ -69,7 +69,7 @@ def handle_data(data):
     sid = request.sid
     slot = next((s for s, s_id in occupied_slots.items() if s_id == sid), None)
     if slot:
-        ctrl_id = f"JOUEUR-{slot}"
+        ctrl_id = f"PLAYER-{slot}"
         if 'b' in data and 's' in data:
             controllers[ctrl_id]['buttons']['Press'] = data['b'][0]
             controllers[ctrl_id]['buttons']['Back'] = data['b'][1]
@@ -100,7 +100,7 @@ def handle_disconnect():
     for slot, sid in occupied_slots.items():
         if sid == request.sid:
             occupied_slots[slot] = None
-            ctrl_id = f"JOUEUR-{slot}"
+            ctrl_id = f"PLAYER-{slot}"
             if ctrl_id in controllers: del controllers[ctrl_id]
             socketio.emit('slots_update', {str(k): (v is not None) for k, v in occupied_slots.items()})
             socketio.emit('update_dashboard', controllers, room='dev_room')
