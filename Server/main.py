@@ -471,13 +471,13 @@ class Game:
             LEVERS_DICT[self.level][lever][0] = t
 
             if t == 1:
-                u, v = pyxel.tilemaps[0].pget(*lever)
-                pyxel.tilemaps[0].pset(*lever, (u - 1, v))
+                u, v = pyxel.tilemaps[self.level].pget(*lever)
+                pyxel.tilemaps[self.level].pset(*lever, (u - 1, v))
                 for tx, ty in lever_info[3]:
-                    if pyxel.tilemaps[0].pget(tx, ty) == lever_info[1]:
-                        pyxel.tilemaps[0].pset(tx, ty, lever_info[2])
+                    if pyxel.tilemaps[self.level].pget(tx, ty) == lever_info[1]:
+                        pyxel.tilemaps[self.level].pset(tx, ty, lever_info[2])
                     else:
-                        pyxel.tilemaps[0].pset(tx, ty, lever_info[1])
+                        pyxel.tilemaps[self.level].pset(tx, ty, lever_info[1])
 
         #? End Timer
         if self.saka_play_timer.get_timer() == 0:
