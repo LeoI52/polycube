@@ -1,5 +1,5 @@
 #!/bin/bash
-
+sleep 15  # Wait for 10 seconds to ensure the system is ready (adjust as needed)
 # Navigate to the project directory
 cd /home/polycube/
 
