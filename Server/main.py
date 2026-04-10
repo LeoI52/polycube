@@ -23,6 +23,7 @@ threading.Thread(target=run_server, daemon=True).start()
 from utils import *
 import threading
 import server
+import pygame
 
 #? ---------- CONSTANTS ---------- ?#
 
@@ -227,6 +228,47 @@ class Teleporter:
                 player.x = nx
                 player.y = ny
 
+class SoundManager:
+
+    def __init__(self, max_channels=16):
+        pygame.mixer.init()
+        pygame.mixer.set_num_channels(max_channels)
+
+        self.sounds = {}
+        self.channels = [pygame.mixer.Channel(i) for i in range(max_channels)]
+
+    def load(self, name: str, path: str):
+        self.sounds[name] = pygame.mixer.Sound(path)
+
+    def play(self, name: str, volume=1.0, loops=0):
+        if name not in self.sounds:
+            print(f"[SoundManager] Sound '{name}' not found")
+            return
+
+        sound = self.sounds[name]
+        sound.set_volume(volume)
+
+        for channel in self.channels:
+            if not channel.get_busy():
+                channel.play(sound, loops=loops)
+                return
+
+        self.channels[0].play(sound, loops=loops)
+
+    def stop(self, name: str = None):
+        if name is None:
+            pygame.mixer.stop()
+        else:
+            if name in self.sounds:
+                sound = self.sounds[name]
+                for channel in self.channels:
+                    if channel.get_sound() == sound:
+                        channel.stop()
+
+    def set_volume(self, name: str, volume: float):
+        if name in self.sounds:
+            self.sounds[name].set_volume(volume)
+
 #? ---------- FUNCTIONS ---------- ?#
 
 def vibrate_controller(ctrl_id, duration=50):
@@ -352,8 +394,8 @@ PLAYER_POS = [
 
 LEVERS_DICT = [
     #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
-    {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 300]},
-    {(33, 1):[0, (3,2), (4,2), [(24,8),(24,9),(24,10),(24,11),(24,12),(24,13),(24,14),(24,17),(24,18),(24,19),(24,20),(11,7),(11,8),(11,9),(11,10),(11,11),(11,12),(11,13),(11,14)], 300]}
+    {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 180]},
+    {(33, 1):[0, (3,2), (4,2), [(24,8),(24,9),(24,10),(24,11),(24,12),(24,13),(24,14),(24,17),(24,18),(24,19),(24,20),(11,7),(11,8),(11,9),(11,10),(11,11),(11,12),(11,13),(11,14)], 180]}
 ]
 
 TELEPORTERS = [
@@ -373,6 +415,10 @@ class Game:
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
+
+        #? Sound Manager
+        self.sound_manager = SoundManager()
+        self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
@@ -518,6 +564,9 @@ class Game:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 18))
         except:
             pass
+
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+            self.sound_manager.play("fire")
 
         #? Tumble
         self.plant = self.plant[0] + random.uniform(0.5, 2), wave_motion(self.plant[1], 1, 1, pyxel.frame_count)
