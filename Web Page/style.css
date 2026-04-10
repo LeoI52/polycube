@@ -10,13 +10,11 @@ body {
     color: #f1f5f9;
     font-family: 'Segoe UI', system-ui, sans-serif;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
     overflow: hidden;
     touch-action: none;
+    /* On retire display: flex et les alignements qui ne sont plus nécessaires ici */
 }
+
 
 /* --- LOBBY --- */
 #lobby {
@@ -111,13 +109,43 @@ body {
     margin-top: 10px; display: block; margin-left: auto; margin-right: auto;
 }
 
-.controls-container { display: flex; gap: 80px; flex-direction: column; align-items: center;    /* Centre les boutons horizontalement */}
-.btn {
-    width: 200px; height: 200px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 1.3rem; box-shadow: 0 8px 0 #000;
-    transition: transform 0.05s, box-shadow 0.05s; user-select: none;
+.status-bar { 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    padding: 20px 10px; /* Un peu plus de padding pour ne pas coller au bord de l'écran */
+    text-align: center; 
+    z-index: 10;
 }
+
+.controls-container { 
+    position: fixed;         /* Fixe le conteneur par rapport à l'écran */
+    bottom: 1cm;             /* Place le bas du conteneur à exactement 1cm du bord */
+    left: 50%;               /* Centre horizontalement */
+    transform: translateX(-50%); /* Ajustement pour un centrage parfait */
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    z-index: 10;             /* S'assure qu'il reste au-dessus du fond */
+}
+
+.btn {
+    width: 200px; 
+    height: 200px; 
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-weight: 900; 
+    font-size: 1.3rem; 
+    box-shadow: 0 8px 0 #000;
+    transition: transform 0.05s, box-shadow 0.05s; 
+    user-select: none;
+    margin: 0;               /* Évite les décalages imprévus */
+}
+
+
 
 #btn-H { background: #2563eb; border: 3px solid #3b82f6; }
 #btn-Pause { background: #dc2626; border: 3px solid #ef4444; }
