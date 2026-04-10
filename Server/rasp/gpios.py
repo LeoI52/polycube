@@ -12,7 +12,7 @@ class GPIOManager:
 
         try:
             self.leds_vertes = [LED(27), LED(17), LED(3), LED(2)]
-            self.rgb = RGBLED(red=16, green=20, blue=21, active_high=False)
+            self.rgb = RGBLED(red=16, green=20, blue=21, active_high=False, initial_value=(0,0,0))
             self.bouton = Button(13, pull_up=False, bounce_time=0.1)
             self.bouton.when_pressed = self._on_button_pressed
             print("GPIO: Matériel initialisé.")
@@ -49,10 +49,11 @@ class GPIOManager:
 
     def _red(self):
         try:
-            if self.rgb: self.rgb.color = (1, 0, 0)
-            time.sleep(0.2)
+            if self.rgb:
+                self.rgb.color = (1, 0, 0)
+                time.sleep(0.5)
+                self.rgb.off()
         except: pass
-        self.all_off()
 
     def blink_start_sequence(self):
         threading.Thread(target=self._blink_loop, daemon=True).start()
