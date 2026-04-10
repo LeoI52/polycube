@@ -358,7 +358,8 @@ class Game:
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
-            Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE)
+            Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
+            Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
@@ -367,14 +368,13 @@ class Game:
         self.main_menu_buttons = [
             Button("Saka", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
             Button("Pong", 40, 156, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT),
-            Button("Far West", 240, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT),
+            Button("Far West", 240, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=self.west_act),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
         #? Saka Varaibles
         self.background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
-        self.init_saka()
 
         #? Run
         self.pyxel_manager.run()
@@ -382,10 +382,11 @@ class Game:
     def saka_act(self):
         if gpio_manager: gpio_manager.blink_start_sequence()
         self.init_saka()
-        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 6))
+        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 18))
 
     def init_saka(self):
         self.level = random.randint(0, 1)
+        self.timer = CountdownTimer(60)
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
@@ -393,6 +394,13 @@ class Game:
             p2_u = random.randint(0, 12) * 8
         self.player_1 = Player(*PLAYER_POS[self.level][0], p1_u, self.level, 1, t)
         self.player_2 = Player(*PLAYER_POS[self.level][1], p2_u, self.level, 2, not t)
+
+    def west_act(self):
+        self.init_west()
+        self.pyxel_manager.change_scene_transition(TransitonPixelate(2, 2, 8, 18))
+
+    def init_west(self):
+        pass
 
     def update_main_menu(self):
         self.title.update()
@@ -449,6 +457,17 @@ class Game:
                     else:
                         pyxel.tilemaps[0].pset(tx, ty, lever_info[1])
 
+        #? End Timer
+        if self.timer.get_timer() == 0:
+            self.pyxel_manager.shake_camera(4, 0.1)
+            for _ in range(20):
+                x = self.player_1.x + 4 if self.player_1.tagger else self.player_2.x + 4
+                y = self.player_1.y + 4 if self.player_1.tagger else self.player_2.y + 4
+                w = random.randint(1, 10)
+                s = random.uniform(0.2, 0.5)
+                tx, ty = x + random.randint(-4, 4), y + random.randint(-4, 4)
+                self.particle_manager.add_particle(OvalParticle(x, y, w, w, [25, 9, 10, 11, 12], 100, s, (tx, ty), dither_duration=10))
+
     def draw_saka(self):
         pyxel.cls(0)
         self.background.draw()
@@ -457,6 +476,14 @@ class Game:
         self.player_2.draw()
         pyxel.bltm(0, 0, self.level, 0, 0, 280, 176, 0)
         self.particle_manager.draw()
+        if self.timer.get_timer() >= 0:
+            self.timer.draw(140, 5, 20, 1, TOP)
+
+    def update_west(self):
+        pass
+
+    def draw_west(self):
+        pyxel.cls(0)
 
 #? ---------- MAIN ---------- ?#
 

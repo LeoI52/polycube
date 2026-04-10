@@ -911,6 +911,17 @@ class ShapeParticle(Particle):
         if self.lifespan > 0 and self.lifespan % (self.initial_lifespan / self.colors_length) == 0:
             self.current_color = (self.current_color + 1) % self.colors_length
 
+class OvalParticle(ShapeParticle):
+
+    def __init__(self, x:int, y:int, w:int, h:int, colors:int|list, lifespan:int, speed:int, target:tuple, friction:tuple=(0, 0), acceleration:tuple=(0, 0), grow:tuple=(0, 0), dither_duration:int=0, hollow:bool=False, zorder:int=0):
+        super().__init__(x, y, w, h, colors, lifespan, speed, target, friction, acceleration, grow, dither_duration, hollow, zorder)
+
+    def draw(self):
+        pyxel.dither(self.dither)
+        if self.hollow:    pyxel.ellib(self.x, self.y, self.w, self.h, self.colors[self.current_color])
+        else:              pyxel.elli(self.x, self.y, self.w, self.h, self.colors[self.current_color])
+        pyxel.dither(1)
+
 class LineParticle(ShapeParticle):
 
     def __init__(self, x:int, y:int, lenght:int, colors:int|list, lifespan:int, speed:int, target:tuple, friction:tuple=(0, 0), acceleration:tuple=(0, 0), grow:int=0, dither_duration:int=0, zorder:int=0):
@@ -1017,6 +1028,24 @@ class MatrixRainBackground:
                 if 0 <= char_y < pyxel.height:
                     color_idx = min(j // 3, len(self.colors) - 1)
                     pyxel.rect(camera_x + x, camera_y + char_y, 2, 3, self.colors[color_idx])
+
+#? -------------------- TIMER -------------------- ?#
+
+class CountdownTimer:
+
+    def __init__(self, duration:int, fps:int=60):
+        self.duration = duration * 60
+        self.fps = fps
+        self.start_frame = pyxel.frame_count
+
+    def restart(self):
+        self.start_frame = pyxel.frame_count
+
+    def get_timer(self):
+        return (self.duration - (pyxel.frame_count - self.start_frame)) / self.fps
+    
+    def draw(self, x:int, y:int, text_colors:list|int, font_size:int, anchor:int=TOP_LEFT):
+        Text(f"{self.get_timer():.2f}", x, y, text_colors, font_size=font_size, anchor=anchor).draw()
 
 #? -------------------- DRAW UI -------------------- ?#
 
