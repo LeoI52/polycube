@@ -415,11 +415,10 @@ class Game:
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 2, fullscreen=True)
 
         #? Sound Manager
         self.sound_manager = SoundManager()
-        self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
@@ -438,6 +437,10 @@ class Game:
 
         #? West Variables
         self.plant = [-10, random.randint(140, 170)]
+        self.p1_acc = [0]
+        self.p2_acc = [0]
+        self.p1_shot = False
+        self.p2_shot = False
 
         #? Run
         self.pyxel_manager.run()
@@ -560,14 +563,25 @@ class Game:
             self.saka_play_timer.draw(140, 5, 20, 1, TOP)
 
     def update_west(self):
+        if not self.p1_shot:
+            _, p1_data = get_player_data("PLAYER-1")
+            if p1_data and p1_data['buttons']['Press']:
+                self.p1_shot = True
+        
+            self.p1_acc.append(p1_data['sensors']['accel']['x'])
+        
+        if not self.p2_shot:
+            _, p2_data = get_player_data("PLAYER-2")
+            if p2_data and p2_data['buttons']['Press']:
+                self.p2_shot = True
+        
+            self.p2_acc.append(p2_data['sensors']['accel']['x'])
+
         #? Polycube Button
         try:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 18))
         except:
             pass
-
-        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            self.sound_manager.play("fire")
 
         #? Tumble
         self.plant = self.plant[0] + random.uniform(0.5, 2), wave_motion(self.plant[1], 1, 1, pyxel.frame_count)
@@ -593,6 +607,17 @@ class Game:
 
         #? Tumble
         draw_moving_spiral(*self.plant, 10, 6, pyxel.frame_count, 4, 100, 0.1)
+
+        #? Cactus
+        pyxel.blt(100, 120, 0, 48, 16, 23, 27, 0, scale=1.5)
+        pyxel.blt(250, 120, 0, 72, 16, 23, 27, 0, scale=1.8)
+
+        #? Players
+        if not self.p1_shot:    pyxel.blt(35, 120, 0, 0, 37, 21, 21, 0, scale=4)
+        else:                   pyxel.blt(35, 120, 0, 0, 16, 21, 21, 0, scale=4)
+
+        if not self.p2_shot:    pyxel.blt(220, 120, 0, 24, 37, 21, 21, 0, scale=4)
+        else:                   pyxel.blt(220, 120, 0, 24, 16, 21, 21, 0, scale=4)
 
 #? ---------- MAIN ---------- ?#
 
