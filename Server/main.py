@@ -330,6 +330,9 @@ def jump(controls:int)-> bool:
 def crouch(controls:int)-> bool:
     return controls['sensors']['accel']['x'] < -4
 
+def get_terrain(x:int, t1:float, h1:float, t2:float, h2:float)-> float:
+    return math.cos(x * t1) * h1 + math.sin(x * t2) * h2
+
 #? ---------- SAKA CONSTANTS ---------- ?#
 
 COLLISION_TILES = [(0,1),(3,2)]
@@ -378,6 +381,9 @@ class Game:
         self.saka_background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
+
+        #? West Variables
+        self.plant = [-10, random.randint(140, 160)]
 
         #? Run
         self.pyxel_manager.run()
@@ -506,8 +512,28 @@ class Game:
         except:
             pass
 
+        #? Tumble
+        self.plant = self.plant[0] + random.uniform(0.5, 2), wave_motion(self.plant[1], 1, 1, pyxel.frame_count)
+        if self.plant[0] > pyxel.width + 10 and random.random() < 0.02:
+            self.plant = [-10, random.randint(140, 160)]
+
     def draw_west(self):
         pyxel.cls(0)
+
+        #? Terrain
+        for x in range(0, pyxel.width + 1):
+            pyxel.pset(x, 80 + get_terrain(x, 0.04, 2, 0.08, 4), 1)
+            pyxel.pset(x, 150 + get_terrain(x, 0.02, 4, 0.05, 3), 2)
+        pyxel.fill(0, 105, 1)
+        pyxel.fill(0, 155, 2)
+        pyxel.fill(0, 0, 18)
+
+        #? Sun
+        draw_moving_spiral(20, 20, 20, 11, pyxel.frame_count, 4, 25, 0.005)
+        pyxel.circ(20, 20, 8, 11)
+
+        #? Tumble
+        draw_moving_spiral(*self.plant, 10, 6, pyxel.frame_count, 4, 100, 0.1)
 
 #? ---------- MAIN ---------- ?#
 

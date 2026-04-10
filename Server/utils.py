@@ -1103,6 +1103,16 @@ def rounded_rectb(x:int, y:int, width:int, height:int, corner_radius:int, color:
                 if corner_radius - 0.5 <= dist <= corner_radius + 0.5:
                     pyxel.pset(cx + sx * i, cy + sy * j, color)
 
+#? -------------------- DRAW -------------------- ?#
+
+def draw_moving_spiral(x:int, y:int, radius:int, color:int, time:int, turns:int=3, segments:int=50, speed:float=0.05):
+    for i in range(segments):
+        angle = (i / segments) * (turns * math.pi * 2) + time * speed
+        r = (i / segments) * radius
+        px = x + math.cos(angle) * r
+        py = y + math.sin(angle) * r
+        pyxel.pset(int(px), int(py), color)
+
 #? -------------------- TEXT FUNCTIONS -------------------- ?#
 
 def text_size(text:str, font:dict, font_size:int=1)-> tuple:
