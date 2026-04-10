@@ -231,6 +231,8 @@ class Teleporter:
 class SoundManager:
 
     def __init__(self, max_channels=16):
+        pygame.init()
+        pygame.mixer.init()
         pygame.mixer.set_num_channels(max_channels)
 
         self.sounds = {}
@@ -416,7 +418,6 @@ class Game:
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
         #? Sound Manager
-        pygame.mixer.init()
         self.sound_manager = SoundManager()
         self.sound_manager.load("fire", "assets/fire.mp3")
 
