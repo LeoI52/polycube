@@ -409,6 +409,10 @@ TELEPORTERS = [
 class Game:
 
     def __init__(self):
+        #? Sound Manager
+        self.sound_manager = SoundManager()
+        self.sound_manager.load("fire", "assets/fire.mp3")
+
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
@@ -416,10 +420,6 @@ class Game:
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
-
-        #? Sound Manager
-        self.sound_manager = SoundManager()
-        self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
