@@ -419,7 +419,7 @@ class Game:
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 2, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
         #? Sound Manager
         self.sound_manager = SoundManager()
