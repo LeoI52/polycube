@@ -190,7 +190,7 @@ class Player:
         self._handle_physics()
 
         if collision_rect_rect(self.x, self.y, self.w, self.h, other.x, other.y, other.w, other.h) and self.tagger and other.tagged_timer == 0:
-            self.tagged_timer = 60
+            self.tagged_timer = 120
             self.tagger = False
             other.tagger = True
             vibrate_controller(id)
@@ -209,7 +209,7 @@ class Player:
         pyxel.blt(self.x, self.y, 0, self.u, 0 + v, w, self.h, 0)
 
         if self.tagger and not pyxel.frame_count // 6 % 6 == 0:
-            blt_outline(self.x, self.y, 0, self.u, v, 8, 8, col=8, flip_x=not self.facing_right)
+            blt_outline(self.x, self.y, 0, self.u, v, 8, 8, col=8, flip_x=not self.facing_right, thickness=2)
 
 class Teleporter:
 
@@ -296,7 +296,8 @@ def tiles_in_rect(x:int, y:int, w:int, h:int, tiles:list, tilemaps:int|list=0)->
 
     return result
 
-def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip_x:bool=False, colkey:int=0):
+def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip_x:bool=False, colkey:int=0, thickness:int=1):
+
     for py in range(h):
         for px in range(w):
             sx = u + (w - 1 - px if flip_x else px)
@@ -306,17 +307,23 @@ def blt_outline(x:int, y:int, img:int, u:int, v:int, w:int, h:int, col:int, flip
             if c == colkey:
                 continue
 
-            for ox, oy in [(-1,0),(1,0),(0,-1),(0,1)]:
-                nx, ny = px + ox, py + oy
+            for oy in range(-thickness, thickness+1):
+                for ox in range(-thickness, thickness+1):
 
-                if nx < 0 or ny < 0 or nx >= w or ny >= h:
-                    pyxel.pset(x + px + ox, y + py + oy, col)
-                else:
-                    nsx = u + (w - 1 - nx if flip_x else nx)
-                    nsy = v + ny
-                    nc = pyxel.images[img].pget(nsx, nsy)
-                    if nc == colkey:
+                    if ox == 0 and oy == 0:
+                        continue
+
+                    nx, ny = px + ox, py + oy
+
+                    if nx < 0 or ny < 0 or nx >= w or ny >= h:
                         pyxel.pset(x + px + ox, y + py + oy, col)
+                    else:
+                        nsx = u + (w - 1 - nx if flip_x else nx)
+                        nsy = v + ny
+                        nc = pyxel.images[img].pget(nsx, nsy)
+
+                        if nc == colkey:
+                            pyxel.pset(x + px + ox, y + py + oy, col)
 
 def left(controls:int)-> bool:
     return controls['sensors']['accel']['y'] < -2
