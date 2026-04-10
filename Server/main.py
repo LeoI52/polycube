@@ -383,7 +383,7 @@ class Game:
         self.saka_play_timer = CountdownTimer(60)
 
         #? West Variables
-        self.plant = [-10, random.randint(140, 160)]
+        self.plant = [-10, random.randint(140, 170)]
 
         #? Run
         self.pyxel_manager.run()
@@ -515,7 +515,7 @@ class Game:
         #? Tumble
         self.plant = self.plant[0] + random.uniform(0.5, 2), wave_motion(self.plant[1], 1, 1, pyxel.frame_count)
         if self.plant[0] > pyxel.width + 10 and random.random() < 0.02:
-            self.plant = [-10, random.randint(140, 160)]
+            self.plant = [-10, random.randint(140, 170)]
 
     def draw_west(self):
         pyxel.cls(0)
@@ -524,6 +524,8 @@ class Game:
         for x in range(0, pyxel.width + 1):
             pyxel.pset(x, 80 + get_terrain(x, 0.04, 2, 0.08, 4), 1)
             pyxel.pset(x, 150 + get_terrain(x, 0.02, 4, 0.05, 3), 2)
+            if x % 30 < 10:
+                pyxel.pset(x, 160 + get_terrain(x, 0.01, 4, 0.03, 5), 1)
         pyxel.fill(0, 105, 1)
         pyxel.fill(0, 155, 2)
         pyxel.fill(0, 0, 18)
