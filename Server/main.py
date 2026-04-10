@@ -383,7 +383,7 @@ class Game:
         self.pyxel_manager.run()
 
     def saka_act(self):
-        if len(server.occupied_slots) == 2:
+        if server.occupied_slots[1] and server.occupied_slots[2]:
             if gpio_manager: gpio_manager.blink_start_sequence()
             self.init_saka()
             self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 18, action=lambda : self.saka_play_timer.restart()))
