@@ -10,13 +10,11 @@ body {
     color: #f1f5f9;
     font-family: 'Segoe UI', system-ui, sans-serif;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
     overflow: hidden;
     touch-action: none;
+    /* On retire display: flex et les alignements qui ne sont plus nécessaires ici */
 }
+
 
 /* --- LOBBY --- */
 #lobby {
@@ -109,6 +107,16 @@ body {
     background: #334155; border: 1px solid #475569; color: #94a3b8;
     padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; cursor: pointer;
     margin-top: 10px; display: block; margin-left: auto; margin-right: auto;
+}
+
+.status-bar { 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    padding: 20px 10px; /* Un peu plus de padding pour ne pas coller au bord de l'écran */
+    text-align: center; 
+    z-index: 10;
 }
 
 .controls-container { 
