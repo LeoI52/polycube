@@ -1,14 +1,17 @@
 #!/bin/bash
-sleep 15  # Wait for 10 seconds to ensure the system is ready (adjust as needed)
-# Navigate to the project directory
-cd /home/polycube/
+# Increase sleep slightly just in case the Desktop is slow to load
+sleep 15
 
-# Activate the virtual environment
-source Server/.venv/bin/activate
+# Use the full path to the project folder
+cd /home/polycube/Server
 
-# Run the Python script
-# Use 'python' instead of 'python3' as the venv maps it automatically
-python Server/main.py
+# Activate using the absolute path to the activate script
+source /home/polycube/Server/.venv/bin/activate
 
-# Optional: Keep the terminal open if it crashes (good for debugging)
+# Run the script. 
+# Adding 'python3' with the full path to the script is safer.
+python3 /home/polycube/Server/main.py
+
+# Keep the window open so you can read the error if it crashes
+echo "Process finished. Press enter to close."
 read
