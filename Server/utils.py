@@ -1029,6 +1029,27 @@ class MatrixRainBackground:
                     color_idx = min(j // 3, len(self.colors) - 1)
                     pyxel.rect(camera_x + x, camera_y + char_y, 2, 3, self.colors[color_idx])
 
+class StarBackground:
+
+    def __init__(self, number_stars:int=100, dir:int=LEFT, stars_color:int=7, stars_speed:tuple=(0.4,0.9)):
+        self.stars = [[random.randint(0, pyxel.width), random.randint(0, pyxel.height), random.randint(0, 1000), random.uniform(*stars_speed)] for _ in range(number_stars)]
+        self.stars_color = stars_color
+        self.dir = dir
+
+    def update(self):
+        for star in self.stars:
+            d = -1 if self.dir in [RIGHT, BOTTOM] else 1
+            if self.dir in [LEFT, RIGHT]:
+                star[0] = (star[0] + star[3] * d) % pyxel.width
+            else:
+                star[1] = (star[1] + star[3] * d) % pyxel.height
+            star[2] += 1
+
+    def draw(self, camera_x:int=0, camera_y:int=0):
+        for x, y, t, _ in self.stars:
+            s = wave_motion(2, 1, 1, t)
+            pyxel.rect(camera_x + x, camera_y + y, s, s, self.stars_color)
+
 #? -------------------- TIMER -------------------- ?#
 
 class CountdownTimer:
@@ -1046,6 +1067,11 @@ class CountdownTimer:
     
     def draw(self, x:int, y:int, text_colors:list|int, font_size:int, anchor:int=TOP_LEFT):
         Text(f"{self.get_timer():.2f}", x, y, text_colors, FONT_DEFAULT, font_size, anchor).draw()
+
+#? -------------------- MOTIONS -------------------- ?#
+
+def wave_motion(value:float, amplitude:float, duration:float, time:int, fps:int=60)-> float:
+    return value + math.sin((2 * math.pi) / (duration * fps) * time) * amplitude
 
 #? -------------------- DRAW UI -------------------- ?#
 

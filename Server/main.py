@@ -366,6 +366,7 @@ class Game:
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
+        self.main_background = StarBackground(200, stars_color=20)
         self.main_menu_buttons = [
             Button("Saka", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
             Button("Pong", 40, 156, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT),
@@ -374,7 +375,7 @@ class Game:
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
         #? Saka Varaibles
-        self.background = MatrixRainBackground(16, 0.5, [21, 22, 23])
+        self.saka_background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
 
@@ -409,6 +410,7 @@ class Game:
 
     def update_main_menu(self):
         self.title.update()
+        self.main_background.update()
         self.main_menu_button_manager.update()
         if gpio_manager and pyxel.frame_count % 30 == 0:
             gpio_manager.update_controllers(server.occupied_slots)
@@ -420,6 +422,7 @@ class Game:
 
     def draw_main_menu(self):
         pyxel.cls(0)
+        self.main_background.draw()
 
         self.title.draw()
         self.main_menu_button_manager.draw()
@@ -429,7 +432,7 @@ class Game:
             self.player_1.update(self.player_2)
             self.player_2.update(self.player_1)
         self.particle_manager.update()
-        self.background.update()
+        self.saka_background.update()
 
         #? Polycube LEDS
         if self.player_1.tagger:
@@ -487,7 +490,7 @@ class Game:
 
     def draw_saka(self):
         pyxel.cls(0)
-        self.background.draw()
+        self.saka_background.draw()
 
         self.player_1.draw()
         self.player_2.draw()
