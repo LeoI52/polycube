@@ -409,6 +409,10 @@ TELEPORTERS = [
 class Game:
 
     def __init__(self):
+        #? Sound Manager
+        self.sound_manager = SoundManager()
+        self.sound_manager.load("fire", "assets/fire.mp3")
+
         #? Pyxel Init
         scenes = [
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
