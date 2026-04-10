@@ -194,7 +194,7 @@ class Player:
             self.tagger = False
             other.tagger = True
             vibrate_controller(id)
-            gpio_manager.tag()
+            gpio_manager.red_start_sequence()
 
         if self.controls:
             self._handle_movement()
@@ -388,7 +388,7 @@ class Game:
             self.init_saka()
             self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 18, action=lambda : self.saka_play_timer.restart()))
         elif gpio_manager:
-            gpio_manager.tag()
+            gpio_manager.red_start_sequence()
 
     def init_saka(self):
         self.level = random.randint(0, 1)

@@ -3,6 +3,7 @@ import threading
 import time
 
 class GPIOManager:
+    
     def __init__(self):
         self.leds_vertes = []
         self.rgb = None
@@ -35,13 +36,6 @@ class GPIOManager:
         self.all_off()
         print("GPIO: Séquence terminée.")
 
-    def tag(self):
-        try:
-            self.rgb.color = (1, 0, 0)
-            time.sleep(0.2)
-        except: pass
-        self.all_off()
-
     def all_off(self):
         for led in self.leds_vertes:
             try: led.off()
@@ -49,6 +43,16 @@ class GPIOManager:
         if self.rgb:
             try: self.rgb.off()
             except: pass
+
+    def red_start_sequence(self):
+        threading.Thread(target=self._red, daemon=True).start()
+
+    def _red(self):
+        try:
+            self.rgb.color = (1, 0, 0)
+            time.sleep(0.2)
+        except: pass
+        self.all_off()
 
     def blink_start_sequence(self):
         threading.Thread(target=self._blink_loop, daemon=True).start()
