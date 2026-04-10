@@ -374,7 +374,7 @@ class Game:
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
-        #? Saka Varaibles
+        #? Saka Variables
         self.saka_background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
@@ -483,7 +483,7 @@ class Game:
                 s = random.uniform(0.2, 0.5)
                 tx, ty = x + random.randint(-4, 4), y + random.randint(-4, 4)
                 self.particle_manager.add_particle(OvalParticle(x, y, w, w, [25, 9, 10, 11, 12], 100, s, (tx, ty), dither_duration=10))
-        elif self.saka_play_timer.get_timer() < 0:
+        elif self.saka_play_timer.get_timer() < -120:
             _, p1_data = get_player_data("PLAYER-1")
             if p1_data and p1_data['buttons']['Press']:
                 self.saka_act()

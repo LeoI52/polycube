@@ -49,7 +49,7 @@ class GPIOManager:
 
     def _red(self):
         try:
-            self.rgb.color = (1, 0, 0)
+            if self.rgb: self.rgb.color = (1, 0, 0)
             time.sleep(0.2)
         except: pass
         self.all_off()
