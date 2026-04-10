@@ -572,14 +572,10 @@ class Game:
             if p1_data and p1_data['buttons']['Press']:
                 self.p1_shot = True
         
-            self.p1_acc.append(p1_data['sensors']['accel']['x'])
-        
         if not self.p2_shot:
             _, p2_data = get_player_data("PLAYER-2")
             if p2_data and p2_data['buttons']['Press']:
                 self.p2_shot = True
-        
-            self.p2_acc.append(p2_data['sensors']['accel']['x'])
 
         #? Polycube Button
         try:
