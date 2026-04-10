@@ -1045,7 +1045,7 @@ class CountdownTimer:
         return (self.duration - (pyxel.frame_count - self.start_frame)) / self.fps
     
     def draw(self, x:int, y:int, text_colors:list|int, font_size:int, anchor:int=TOP_LEFT):
-        Text(f"{self.get_timer():.2f}", x, y, text_colors, font_size=font_size, anchor=anchor).draw()
+        Text(f"{self.get_timer():.2f}", x, y, text_colors, FONT_DEFAULT, font_size, anchor).draw()
 
 #? -------------------- DRAW UI -------------------- ?#
 

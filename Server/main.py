@@ -1,7 +1,7 @@
 """
 @author : Léo Imbert
 @created : 13/03/2026
-@updated : 03/04/2026
+@updated : 10/04/2026
 """
 
 #? ---------- CHARGEMENT GPIO ---------- ?#
@@ -375,6 +375,7 @@ class Game:
         #? Saka Varaibles
         self.background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
+        self.saka_play_timer = CountdownTimer(60)
 
         #? Run
         self.pyxel_manager.run()
@@ -386,7 +387,7 @@ class Game:
 
     def init_saka(self):
         self.level = random.randint(0, 1)
-        self.timer = CountdownTimer(60)
+        self.saka_play_timer.restart()
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
@@ -396,6 +397,7 @@ class Game:
         self.player_2 = Player(*PLAYER_POS[self.level][1], p2_u, self.level, 2, not t)
 
     def west_act(self):
+        if gpio_manager: gpio_manager.blink_start_sequence()
         self.init_west()
         self.pyxel_manager.change_scene_transition(TransitonPixelate(2, 2, 8, 18))
 
@@ -415,16 +417,19 @@ class Game:
         self.main_menu_button_manager.draw()
 
     def update_saka(self):
-        self.player_1.update(self.player_2)
-        self.player_2.update(self.player_1)
+        if self.saka_play_timer.get_timer() > 0:
+            self.player_1.update(self.player_2)
+            self.player_2.update(self.player_1)
         self.particle_manager.update()
         self.background.update()
 
+        #? Polycube LEDS
         if self.player_1.tagger:
             gpio_manager.update_controllers({1:True, 2:True})
         else:
             gpio_manager.update_controllers({3:True, 4:True})
 
+        #? Polycube Button
         try:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 6))
         except:
@@ -458,7 +463,7 @@ class Game:
                         pyxel.tilemaps[0].pset(tx, ty, lever_info[1])
 
         #? End Timer
-        if self.timer.get_timer() == 0:
+        if self.saka_play_timer.get_timer() == 0:
             self.pyxel_manager.shake_camera(4, 0.1)
             for _ in range(20):
                 x = self.player_1.x + 4 if self.player_1.tagger else self.player_2.x + 4
@@ -467,6 +472,11 @@ class Game:
                 s = random.uniform(0.2, 0.5)
                 tx, ty = x + random.randint(-4, 4), y + random.randint(-4, 4)
                 self.particle_manager.add_particle(OvalParticle(x, y, w, w, [25, 9, 10, 11, 12], 100, s, (tx, ty), dither_duration=10))
+        elif self.saka_play_timer.get_timer() < 0:
+            _, p1_data = get_player_data("PLAYER-1")
+            if p1_data and p1_data['buttons']['Press']:
+                self.saka_act()
+
 
     def draw_saka(self):
         pyxel.cls(0)
@@ -476,8 +486,8 @@ class Game:
         self.player_2.draw()
         pyxel.bltm(0, 0, self.level, 0, 0, 280, 176, 0)
         self.particle_manager.draw()
-        if self.timer.get_timer() >= 0:
-            self.timer.draw(140, 5, 20, 1, TOP)
+        if self.saka_play_timer.get_timer() >= 0:
+            self.saka_play_timer.draw(140, 5, 20, 1, TOP)
 
     def update_west(self):
         pass
