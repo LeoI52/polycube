@@ -185,7 +185,7 @@ class Player:
                     break
     
     def update(self, other):
-        _, self.controls = get_player_data(f"PLAYER-{self.player_number}")
+        id, self.controls = get_player_data(f"PLAYER-{self.player_number}")
         self._handle_timers()
         self._handle_physics()
 
@@ -193,6 +193,7 @@ class Player:
             self.tagged_timer = 60
             self.tagger = False
             other.tagger = True
+            vibrate_controller(id)
             gpio_manager.tag()
 
         if self.controls:
@@ -341,8 +342,8 @@ PLAYER_POS = [
 
 LEVERS_DICT = [
     #? Tile Coord : Timer, Block tile, Hollow tile, Block coords, Timer duration
-    {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 480]},
-    {(33, 1):[0, (3,2), (4,2), [(24,8),(24,9),(24,10),(24,11),(24,12),(24,13),(24,14),(24,17),(24,18),(24,19),(24,20),(11,7),(11,8),(11,9),(11,10),(11,11),(11,12),(11,13),(11,14)], 480]}
+    {(11, 4):[0, (3,2), (4,2), [(8,18),(8,19),(8,20),(27,6),(28,5),(29,5),(16,8),(17,9),(18,10)], 300]},
+    {(33, 1):[0, (3,2), (4,2), [(24,8),(24,9),(24,10),(24,11),(24,12),(24,13),(24,14),(24,17),(24,18),(24,19),(24,20),(11,7),(11,8),(11,9),(11,10),(11,11),(11,12),(11,13),(11,14)], 300]}
 ]
 
 TELEPORTERS = [
@@ -381,13 +382,15 @@ class Game:
         self.pyxel_manager.run()
 
     def saka_act(self):
-        if gpio_manager: gpio_manager.blink_start_sequence()
-        self.init_saka()
-        self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 18))
+        if len(server.occupied_slots) == 2:
+            if gpio_manager: gpio_manager.blink_start_sequence()
+            self.init_saka()
+            self.pyxel_manager.change_scene_transition(TransitonPixelate(1, 2, 8, 18, action=lambda : self.saka_play_timer.restart()))
+        elif gpio_manager:
+            gpio_manager.tag()
 
     def init_saka(self):
         self.level = random.randint(0, 1)
-        self.saka_play_timer.restart()
         t = random.choice([False, True])
         p1_u = random.randint(0, 12) * 8
         p2_u = random.randint(0, 12) * 8
@@ -409,6 +412,11 @@ class Game:
         self.main_menu_button_manager.update()
         if gpio_manager and pyxel.frame_count % 30 == 0:
             gpio_manager.update_controllers(server.occupied_slots)
+
+        try:
+            gpio_manager.bouton.when_pressed = None
+        except:
+            pass
 
     def draw_main_menu(self):
         pyxel.cls(0)
@@ -477,7 +485,6 @@ class Game:
             if p1_data and p1_data['buttons']['Press']:
                 self.saka_act()
 
-
     def draw_saka(self):
         pyxel.cls(0)
         self.background.draw()
@@ -490,7 +497,11 @@ class Game:
             self.saka_play_timer.draw(140, 5, 20, 1, TOP)
 
     def update_west(self):
-        pass
+        #? Polycube Button
+        try:
+            gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 6))
+        except:
+            pass
 
     def draw_west(self):
         pyxel.cls(0)
