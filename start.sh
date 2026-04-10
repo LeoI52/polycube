@@ -1,17 +1,22 @@
 #!/bin/bash
-# Increase sleep slightly just in case the Desktop is slow to load
-sleep 15
+# Give the desktop a moment to breathe
+sleep 5
 
-# Use the full path to the project folder
-cd /home/polycube/Server
+echo "--- Starting Script ---"
+# Use absolute paths for EVERYTHING
+cd /home/polycube/polycube/Server || echo "Could not find Server directory"
 
-# Activate using the absolute path to the activate script
-source /home/polycube/Server/.venv/bin/activate
+# Activate venv
+if [ -f "/home/polycube/polycube/Server/.venv/bin/activate" ]; then
+    source /home/polycube/polycube/Server/.venv/bin/activate
+    echo "Virtual Environment Activated"
+else
+    echo "ERROR: Virtual environment not found!"
+fi
 
-# Run the script. 
-# Adding 'python3' with the full path to the script is safer.
-python3 /home/polycube/Server/main.py
+# Run python
+python3 /home/polycube/polycube/Server/main.py
 
-# Keep the window open so you can read the error if it crashes
-echo "Process finished. Press enter to close."
-read
+echo "--- Script Stopped ---"
+# This keeps the window open so you can read the error!
+read -p "Press Enter to close..."
