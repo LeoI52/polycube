@@ -383,6 +383,12 @@ def crouch(controls:int)-> bool:
 def get_terrain(x:int, t1:float, h1:float, t2:float, h2:float)-> float:
     return math.cos(x * t1) * h1 + math.sin(x * t2) * h2
 
+def angle_check(val:int):
+    theta=math.degrees(math.asin(-val / 9.81))
+    if (theta<=20 and theta>=-20):
+        return True
+    return False
+
 #? ---------- SAKA CONSTANTS ---------- ?#
 
 COLLISION_TILES = [(0,1),(3,2)]
@@ -411,7 +417,10 @@ class Game:
     def __init__(self):
         #? Sound Manager
         self.sound_manager = SoundManager()
-        self.sound_manager.load("fire", "assets/fire.mp3")
+        self.sound_manager.load("ready", "Server/assets/ready.mp3")
+        self.sound_manager.load("shoot", "Server/assets/shoot.mp3")
+        self.sound_manager.load("get", "Server/assets/get.mp3")
+        self.sound_manager.load("fire", "Server/assets/fire.mp3")
 
         #? Pyxel Init
         scenes = [
@@ -419,10 +428,7 @@ class Game:
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
-
-        #? Sound Manager
-        self.sound_manager = SoundManager()
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 2, fullscreen=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
@@ -439,12 +445,7 @@ class Game:
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
 
-        #? West Variables
-        self.plant = [-10, random.randint(140, 170)]
-        self.p1_acc = [0]
-        self.p2_acc = [0]
-        self.p1_shot = False
-        self.p2_shot = False
+        self.init_west()
 
         #? Run
         self.pyxel_manager.run()
@@ -468,12 +469,22 @@ class Game:
         self.player_2 = Player(*PLAYER_POS[self.level][1], p2_u, self.level, 2, not t)
 
     def west_act(self):
-        if gpio_manager: gpio_manager.blink_start_sequence()
-        self.init_west()
-        self.pyxel_manager.change_scene_transition(TransitonPixelate(2, 2, 8, 18))
+        if server.occupied_slots[1] and server.occupied_slots[2]:
+            if gpio_manager: gpio_manager.blink_start_sequence()
+            self.init_west()
+            self.pyxel_manager.change_scene_transition(TransitonPixelate(2, 2, 8, 18, action=lambda:self.sound_manager.play("get")))
+        elif gpio_manager:
+            gpio_manager.red_start_sequence()
 
     def init_west(self):
-        pass
+        self.plant = [-10, random.randint(140, 170)]
+        self.state = "prep"
+        self.west_prep_timer = CountdownTimer(5)
+        self.p1_shot = False
+        self.p2_shot = False
+        self.first = 0
+        self.p1_angle = 0
+        self.p2_angle = 0
 
     def update_main_menu(self):
         self.title.update()
@@ -567,16 +578,6 @@ class Game:
             self.saka_play_timer.draw(140, 5, 20, 1, TOP)
 
     def update_west(self):
-        if not self.p1_shot:
-            _, p1_data = get_player_data("PLAYER-1")
-            if p1_data and p1_data['buttons']['Press']:
-                self.p1_shot = True
-        
-        if not self.p2_shot:
-            _, p2_data = get_player_data("PLAYER-2")
-            if p2_data and p2_data['buttons']['Press']:
-                self.p2_shot = True
-
         #? Polycube Button
         try:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 18))
@@ -587,6 +588,49 @@ class Game:
         self.plant = self.plant[0] + random.uniform(0.5, 2), wave_motion(self.plant[1], 1, 1, pyxel.frame_count)
         if self.plant[0] > pyxel.width + 10 and random.random() < 0.02:
             self.plant = [-10, random.randint(140, 170)]
+
+        #? State Machine
+        if self.state == "prep":
+            if self.west_prep_timer.get_timer() == 0:
+                self.state = "wait"
+                self.west_wait_timer = CountdownTimer(random.randint(3, 5))
+                self.sound_manager.play("ready")
+
+        elif self.state == "wait":
+            _, p1_data = get_player_data("PLAYER-1")
+            _, p2_data = get_player_data("PLAYER-2")
+
+            if p1_data and p1_data['sensors']:
+                self.state = "end"
+
+            if p2_data and p2_data['sensors']:
+                self.state = "end"
+
+            if self.west_wait_timer.get_timer() == 0:
+                self.state = "shoot"
+                self.sound_manager.play("fire")
+
+        elif self.state == "shoot":
+            if not self.p1_shot:
+                _, p1_data = get_player_data("PLAYER-1")
+                if p1_data and p1_data['buttons']['Press']:
+                    self.p1_shot = True
+                    self.p1_angle = 3 #! angle de tir
+                    self.sound_manager.play("shoot")
+                    if not self.p2_shot:
+                        self.first = 1
+            
+            if not self.p2_shot:
+                _, p2_data = get_player_data("PLAYER-2")
+                if p2_data and p2_data['buttons']['Press']:
+                    self.p2_shot = True
+                    self.p2_angle = 3 #! angle de tir
+                    self.sound_manager.play("shoot")
+                    if not self.p1_shot:
+                        self.first = 2
+
+            if self.p1_shot and self.p2_shot:
+                self.state = "end"
 
     def draw_west(self):
         pyxel.cls(0)
@@ -604,6 +648,25 @@ class Game:
         #? Sun
         draw_moving_spiral(20, 20, 20, 11, pyxel.frame_count, 4, 25, 0.005)
         pyxel.circ(20, 20, 8, 11)
+
+        #? Text
+        if self.state == "prep":
+            Text("Get in place...", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+        elif self.state == "wait":
+            Text("Ready...", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+        elif self.state == "shoot":
+            Text("Fire !", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+        elif self.state == "end":
+            if self.first == 1 and angle_check(self.p1_angle):
+                Text("Player 1 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+            elif self.first == 2 and angle_check(self.p2_angle):
+                Text("Player 2 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+            elif angle_check(self.p1_angle):
+                Text("Player 1 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+            elif angle_check(self.p2_angle):
+                Text("Player 2 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
+            else:
+                Text("No one won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
 
         #? Tumble
         draw_moving_spiral(*self.plant, 10, 6, pyxel.frame_count, 4, 100, 0.1)
