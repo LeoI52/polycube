@@ -417,10 +417,10 @@ class Game:
     def __init__(self):
         #? Sound Manager
         self.sound_manager = SoundManager()
-        self.sound_manager.load("ready", "Server/assets/ready.mp3")
-        self.sound_manager.load("shoot", "Server/assets/shoot.mp3")
-        self.sound_manager.load("get", "Server/assets/get.mp3")
-        self.sound_manager.load("fire", "Server/assets/fire.mp3")
+        self.sound_manager.load("ready", "assets/ready.mp3")
+        self.sound_manager.load("shoot", "assets/shoot.mp3")
+        self.sound_manager.load("get", "assets/get.mp3")
+        self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Pyxel Init
         scenes = [
