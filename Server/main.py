@@ -1,7 +1,7 @@
 """
 @author : Léo Imbert
 @created : 13/03/2026
-@updated : 10/04/2026
+@updated : 15/04/2026
 """
 
 #? ---------- CHARGEMENT GPIO ---------- ?#
