@@ -32,9 +32,6 @@ PALETTE = [0x000000, 0xbe4a2f, 0xd77643, 0xead4aa, 0xe4a672, 0xb86f50, 0x733e39,
            0x193c3e, 0x124e89, 0x0099db, 0x2ce8f5, 0xffffff, 0xc0cbdc, 0x8b9bb4, 0x5a6988, 
            0x3a4466, 0x262b44, 0xff0044, 0x68386c, 0xb55088, 0xf6757a, 0xe8b796, 0xc28569, 0x000000]
 
-ANGLE_UP = 0
-ANGLE_DOWN = 100
-
 #? ---------- CLASSES ---------- ?#
 
 class ButtonManager:
@@ -640,6 +637,11 @@ class Game:
 
             if self.p1_shot and self.p2_shot:
                 self.state = "end"
+
+        else:
+            _, p1_data = get_player_data("PLAYER-1")
+            if p1_data and p1_data['buttons']['Press']:
+                self.west_act()
 
     def draw_west(self):
         pyxel.cls(0)
