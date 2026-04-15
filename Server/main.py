@@ -13,6 +13,8 @@ gpio_manager.startup_sequence()
 
 import server
 import threading
+import random
+import math
 
 def run_server():
     server.start_server()
@@ -24,6 +26,7 @@ from utils import *
 import threading
 import server
 import pygame
+import pyxel
 
 #? ---------- CONSTANTS ---------- ?#
 
@@ -33,6 +36,32 @@ PALETTE = [0x000000, 0xbe4a2f, 0xd77643, 0xead4aa, 0xe4a672, 0xb86f50, 0x733e39,
            0x3a4466, 0x262b44, 0xff0044, 0x68386c, 0xb55088, 0xf6757a, 0xe8b796, 0xc28569, 0x000000]
 
 #? ---------- CLASSES ---------- ?#
+
+class Ball:
+    def __init__(self, x, y):
+        self.start_x = x
+        self.start_y = y
+        self.w = 4
+        self.h = 4
+        self.reset()
+
+    def reset(self):
+        self.x = self.start_x
+        self.y = self.start_y
+        self.vx = random.choice([-2, 2])
+        self.vy = random.uniform(-1.5, 1.5)
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+
+        # Rebond haut/bas
+        if self.y <= 0 or self.y >= 176 - self.h:
+            self.vy *= -1
+            pyxel.play(3, 0) # Assurez-vous d'avoir un son chargé
+
+    def draw(self):
+        pyxel.rect(self.x, self.y, self.w, self.h, 7)
 
 class ButtonManager:
 
@@ -428,7 +457,8 @@ class Game:
         scenes = [
             Scene(0, "PolyCube - Main Menu", self.update_main_menu, self.draw_main_menu, "assets/assets.pyxres", PALETTE),
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
-            Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
+            Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE),
+            Scene(3, "Polycube - Pong", self.update_pong, self.draw_pong, "assets/assets.pyxres", PALETTE)
         ]
         self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
@@ -437,7 +467,7 @@ class Game:
         self.main_background = StarBackground(200, stars_color=20)
         self.main_menu_buttons = [
             Button("Saka", 140, 70, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP, on_click=self.saka_act),
-            Button("Pong", 140, 100, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP),
+            Button("Pong", 140, 100, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP, on_click=self.pong_act),
             Button("Far West", 140, 130, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP, on_click=self.west_act),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
@@ -485,6 +515,84 @@ class Game:
         self.first = 0
         self.p1_angle = 0
         self.p2_angle = 0
+
+    #? ---------- PONG ---------- ?#
+
+    def pong_act(self):
+        # SECURITÉ : Vérifier si au moins 2 joueurs sont connectés
+        if server.occupied_slots[1] and server.occupied_slots[2]:
+            if gpio_manager: gpio_manager.blink_start_sequence()
+            self.init_pong()
+            self.pyxel_manager.change_scene_transition(TransitonPixelate(3, 2, 8, 18))
+        elif gpio_manager:
+            gpio_manager.red_start_sequence()
+
+    def init_pong(self):
+        self.score_p1 = 0
+        self.score_p2 = 0
+        self.ball = Ball(140, 88)
+        # Raquettes : [x, y, w, h]
+        self.paddle_h = 30
+        self.paddle_w = 4
+        self.p1_paddle = [10, 88 - self.paddle_h // 2, self.paddle_w, self.paddle_h]
+        self.p2_paddle = [270 - self.paddle_w, 88 - self.paddle_h // 2, self.paddle_w, self.paddle_h]
+
+    def update_pong(self):
+        # Bouton retour menu
+        try:
+            gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 18))
+        except:
+            pass
+
+        # Récupération données joueurs
+        _, p1_data = get_player_data("PLAYER-1")
+        _, p2_data = get_player_data("PLAYER-2")
+
+        # Mouvement Raquettes (basé sur l'accéléromètre Y)
+        if p1_data:
+            self.p1_paddle[1] = clamp(self.p1_paddle[1] + p1_data['sensors']['accel']['y'] * 2, 0, 176 - self.paddle_h)
+        if p2_data:
+            self.p2_paddle[1] = clamp(self.p2_paddle[1] + p2_data['sensors']['accel']['y'] * 2, 0, 176 - self.paddle_h)
+
+        self.ball.update()
+
+        # Collisions Raquettes
+        if collision_rect_rect(self.ball.x, self.ball.y, self.ball.w, self.ball.h, *self.p1_paddle):
+            self.ball.vx = abs(self.ball.vx) + 0.2 # On accélère un peu
+            self.ball.x = self.p1_paddle[0] + self.p1_paddle[2]
+            vibrate_controller("PLAYER-1", 30)
+
+        if collision_rect_rect(self.ball.x, self.ball.y, self.ball.w, self.ball.h, *self.p2_paddle):
+            self.ball.vx = -abs(self.ball.vx) - 0.2
+            self.ball.x = self.p2_paddle[0] - self.ball.w
+            vibrate_controller("PLAYER-2", 30)
+
+        # Points
+        if self.ball.x < 0:
+            self.score_p2 += 1
+            self.ball.reset()
+        elif self.ball.x > 280:
+            self.score_p1 += 1
+            self.ball.reset()
+
+    def draw_pong(self):
+        pyxel.cls(0)
+        # Ligne centrale
+        for i in range(0, 176, 10):
+            pyxel.rect(139, i, 2, 5, 23)
+
+        # Raquettes
+        pyxel.rect(*self.p1_paddle, 11)
+        pyxel.rect(*self.p2_paddle, 11)
+
+        # Balle
+        self.ball.draw()
+
+        # Scores
+        pyxel.text(100, 10, str(self.score_p1), 7)
+        pyxel.text(175, 10, str(self.score_p2), 7)
+
+    #? ---------- MAIN MENU ---------- ?#
 
     def update_main_menu(self):
         self.title.update()
