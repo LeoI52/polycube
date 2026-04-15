@@ -554,6 +554,7 @@ class Game:
         #? End Timer
         if self.saka_play_timer.get_timer() == 0:
             self.pyxel_manager.shake_camera(4, 0.1)
+            pyxel.play(1, 1)
             for _ in range(20):
                 x = self.player_1.x + 4 if self.player_1.tagger else self.player_2.x + 4
                 y = self.player_1.y + 4 if self.player_1.tagger else self.player_2.y + 4
