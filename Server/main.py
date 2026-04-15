@@ -2,10 +2,6 @@
 @author : Léo Imbert
 @created : 13/03/2026
 @updated : 10/04/2026
-
-angle down : 100°
-angle up : 180°
-
 """
 
 #? ---------- CHARGEMENT GPIO ---------- ?#
@@ -36,7 +32,7 @@ PALETTE = [0x000000, 0xbe4a2f, 0xd77643, 0xead4aa, 0xe4a672, 0xb86f50, 0x733e39,
            0x193c3e, 0x124e89, 0x0099db, 0x2ce8f5, 0xffffff, 0xc0cbdc, 0x8b9bb4, 0x5a6988, 
            0x3a4466, 0x262b44, 0xff0044, 0x68386c, 0xb55088, 0xf6757a, 0xe8b796, 0xc28569, 0x000000]
 
-ANGLE_UP = 180
+ANGLE_UP = 0
 ANGLE_DOWN = 100
 
 #? ---------- CLASSES ---------- ?#
@@ -441,7 +437,7 @@ class Game:
         self.main_menu_buttons = [
             Button("Saka", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
             Button("Pong", 40, 156, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT),
-            Button("Far West", 240, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=self.west_act),
+            Button("Far West", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=self.west_act),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
@@ -603,10 +599,10 @@ class Game:
             _, p1_data = get_player_data("PLAYER-1")
             _, p2_data = get_player_data("PLAYER-2")
 
-            if p1_data and angle_check(p1_data['sensors']['beta'], ANGLE_DOWN):
+            if p1_data and not angle_check(p1_data['sensors']['beta'], ANGLE_DOWN):
                 self.state = "end"
 
-            if p2_data and angle_check(p2_data['sensors']['beta'], ANGLE_DOWN):
+            if p2_data and not angle_check(p2_data['sensors']['beta'], ANGLE_DOWN):
                 self.state = "end"
 
             if self.west_wait_timer.get_timer() == 0:
