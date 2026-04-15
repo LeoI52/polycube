@@ -605,9 +605,13 @@ class Game:
 
             if p1_data and not angle_check_down(p1_data['sensors']['beta']):
                 self.state = "end"
+                self.first = 2
+                self.p2_angle = (0, 0, 0)
 
             if p2_data and not angle_check_down(p2_data['sensors']['beta']):
                 self.state = "end"
+                self.first = 1
+                self.p1_angle = (0, 0, 0)
 
             if self.west_wait_timer.get_timer() == 0:
                 self.state = "shoot"
@@ -619,6 +623,7 @@ class Game:
                 if p1_data and p1_data['buttons']['Press']:
                     self.p1_shot = True
                     self.p1_angle = (p1_data['sensors']['alpha'], p1_data['sensors']['beta'], p1_data['sensors']['gamma'])
+                    print(self.p1_angle)
                     self.sound_manager.play("shoot")
                     if not self.p2_shot:
                         self.first = 1
@@ -628,6 +633,7 @@ class Game:
                 if p2_data and p2_data['buttons']['Press']:
                     self.p2_shot = True
                     self.p2_angle = (p2_data['sensors']['alpha'], p2_data['sensors']['beta'], p2_data['sensors']['gamma'])
+                    print(self.p2_angle)
                     self.sound_manager.play("shoot")
                     if not self.p1_shot:
                         self.first = 2
