@@ -387,11 +387,11 @@ def get_terrain(x:int, t1:float, h1:float, t2:float, h2:float)-> float:
     return math.cos(x * t1) * h1 + math.sin(x * t2) * h2
 
 def angle_check_down(beta:int):
-    ep = 20
+    ep = 40
     return -90 - ep <= beta <= -90 + ep 
 
 def angle_check_up(alpha:int, beta:int, gamma:int):
-    ep = 10
+    ep = 20
     return 0 - ep <= alpha <= 0 + ep and 0 - ep <= beta <= 0 + ep and 0 - ep <= gamma <= 0 + ep 
 
 #? ---------- SAKA CONSTANTS ---------- ?#
