@@ -428,7 +428,7 @@ class Game:
             Scene(1, "Polycube - Saka", self.update_saka, self.draw_saka, "assets/assets.pyxres", PALETTE),
             Scene(2, "Polycube - Far west", self.update_west, self.draw_west, "assets/assets.pyxres", PALETTE)
         ]
-        self.pyxel_manager = PyxelManager(280, 176, scenes, 2, fullscreen=True)
+        self.pyxel_manager = PyxelManager(280, 176, scenes, 0, fullscreen=True)
 
         #? Main Menu Variables
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
@@ -444,8 +444,6 @@ class Game:
         self.saka_background = MatrixRainBackground(16, 0.5, [21, 22, 23])
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
-
-        self.init_west()
 
         #? Run
         self.pyxel_manager.run()
