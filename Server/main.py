@@ -386,9 +386,13 @@ def crouch(controls:int)-> bool:
 def get_terrain(x:int, t1:float, h1:float, t2:float, h2:float)-> float:
     return math.cos(x * t1) * h1 + math.sin(x * t2) * h2
 
-def angle_check(val:int, angle:int):
+def angle_check_down(beta:int):
+    ep = 20
+    return -90 - ep <= beta <= -90 + ep 
+
+def angle_check_up(alpha:int, beta:int, gamma:int):
     ep = 10
-    return angle - ep <= val <= angle + ep
+    return 0 - ep <= alpha <= 0 + ep and 0 - ep <= beta <= 0 + ep and 0 - ep <= gamma <= 0 + ep 
 
 #? ---------- SAKA CONSTANTS ---------- ?#
 
@@ -418,10 +422,10 @@ class Game:
     def __init__(self):
         #? Sound Manager
         self.sound_manager = SoundManager()
-        # self.sound_manager.load("ready", "assets/ready.mp3")
-        # self.sound_manager.load("shoot", "assets/shoot.mp3")
-        # self.sound_manager.load("get", "assets/get.mp3")
-        # self.sound_manager.load("fire", "assets/fire.mp3")
+        self.sound_manager.load("ready", "assets/ready.mp3")
+        self.sound_manager.load("shoot", "assets/shoot.mp3")
+        self.sound_manager.load("get", "assets/get.mp3")
+        self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Pyxel Init
         scenes = [
@@ -599,10 +603,10 @@ class Game:
             _, p1_data = get_player_data("PLAYER-1")
             _, p2_data = get_player_data("PLAYER-2")
 
-            if p1_data and not angle_check(p1_data['sensors']['beta'], ANGLE_DOWN):
+            if p1_data and not angle_check_down(p1_data['sensors']['beta']):
                 self.state = "end"
 
-            if p2_data and not angle_check(p2_data['sensors']['beta'], ANGLE_DOWN):
+            if p2_data and not angle_check_down(p2_data['sensors']['beta']):
                 self.state = "end"
 
             if self.west_wait_timer.get_timer() == 0:
@@ -614,7 +618,7 @@ class Game:
                 _, p1_data = get_player_data("PLAYER-1")
                 if p1_data and p1_data['buttons']['Press']:
                     self.p1_shot = True
-                    self.p1_angle = p1_data['sensors']['beta']
+                    self.p1_angle = (p1_data['sensors']['alpha'], p1_data['sensors']['beta'], p1_data['sensors']['gamma'])
                     self.sound_manager.play("shoot")
                     if not self.p2_shot:
                         self.first = 1
@@ -623,7 +627,7 @@ class Game:
                 _, p2_data = get_player_data("PLAYER-2")
                 if p2_data and p2_data['buttons']['Press']:
                     self.p2_shot = True
-                    self.p2_angle = p2_data['sensors']['beta']
+                    self.p2_angle = (p2_data['sensors']['alpha'], p2_data['sensors']['beta'], p2_data['sensors']['gamma'])
                     self.sound_manager.play("shoot")
                     if not self.p1_shot:
                         self.first = 2
@@ -656,13 +660,13 @@ class Game:
         elif self.state == "shoot":
             Text("Fire !", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
         elif self.state == "end":
-            if self.first == 1 and angle_check(self.p1_angle, ANGLE_UP):
+            if self.first == 1 and angle_check_up(*self.p1_angle):
                 Text("Player 1 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
-            elif self.first == 2 and angle_check(self.p2_angle, ANGLE_UP):
+            elif self.first == 2 and angle_check_up(*self.p2_angle):
                 Text("Player 2 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
-            elif angle_check(self.p1_angle, ANGLE_UP):
+            elif angle_check_up(*self.p1_angle):
                 Text("Player 1 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
-            elif angle_check(self.p2_angle, ANGLE_UP):
+            elif angle_check_up(*self.p2_angle):
                 Text("Player 2 won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
             else:
                 Text("No one won", 140, 40, 21, FONT_DEFAULT, 2, TOP, outline_color=25).draw()
