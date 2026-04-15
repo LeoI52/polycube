@@ -418,10 +418,10 @@ class Game:
     def __init__(self):
         #? Sound Manager
         self.sound_manager = SoundManager()
-        self.sound_manager.load("ready", "assets/ready.mp3")
-        self.sound_manager.load("shoot", "assets/shoot.mp3")
-        self.sound_manager.load("get", "assets/get.mp3")
-        self.sound_manager.load("fire", "assets/fire.mp3")
+        # self.sound_manager.load("ready", "assets/ready.mp3")
+        # self.sound_manager.load("shoot", "assets/shoot.mp3")
+        # self.sound_manager.load("get", "assets/get.mp3")
+        # self.sound_manager.load("fire", "assets/fire.mp3")
 
         #? Pyxel Init
         scenes = [
@@ -435,9 +435,9 @@ class Game:
         self.title = Text("PolyCube", 140, 30, [10, 11, 18, 17], FONT_DEFAULT, 3, CENTER, (VERTICAL, NORMAL_COLOR_MODE, 20), (10, 10, 0.3), outline_color=7)
         self.main_background = StarBackground(200, stars_color=20)
         self.main_menu_buttons = [
-            Button("Saka", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_LEFT, on_click=self.saka_act),
-            Button("Pong", 40, 156, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=BOTTOM_LEFT),
-            Button("Far West", 40, 80, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP_RIGHT, on_click=self.west_act),
+            Button("Saka", 140, 70, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP, on_click=self.saka_act),
+            Button("Pong", 140, 100, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP),
+            Button("Far West", 140, 130, 18, 10, 17, 11, FONT_DEFAULT, 2, anchor=TOP, on_click=self.west_act),
         ]
         self.main_menu_button_manager = ButtonManager(self.main_menu_buttons)
 
