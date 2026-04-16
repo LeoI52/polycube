@@ -532,30 +532,30 @@ class Game:
             if gpio_manager:
                 gpio_manager.red_start_sequence()
 
-def init_pong(self):
-    self.vies_p1 = 3
-    self.vies_p2 = 3
-    self.pong_timer = CountdownTimer(90) # 90 secondes = 1min 30
-    self.ball = Ball(140, 88)
-    self.paddle_h = 25
-    self.paddle_w = 4
+    def init_pong(self):
+        self.vies_p1 = 3
+        self.vies_p2 = 3
+        self.pong_timer = CountdownTimer(90) # 90 secondes = 1min 30
+        self.ball = Ball(140, 88)
+        self.paddle_h = 25
+            self.paddle_w = 4
 
 
 
-    self.score_p1 = 0 # Équipe Gauche (Joueurs 1 & 3)
-    self.score_p2 = 0 # Équipe Droite (Joueurs 2 & 4)
-    self.ball = Ball(140, 88)
-    
-    self.paddle_h = 30 if self.nb_players_pong == 2 else 20
-    self.paddle_w = 4
-    
-    # Raquettes équipe Gauche
-    self.p1_paddle = [10, 40, self.paddle_w, self.paddle_h]
-    self.p3_paddle = [10, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
-    
-    # Raquettes équipe Droite
-    self.p2_paddle = [266, 40, self.paddle_w, self.paddle_h]
-    self.p4_paddle = [266, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
+        self.score_p1 = 0 # Équipe Gauche (Joueurs 1 & 3)
+        self.score_p2 = 0 # Équipe Droite (Joueurs 2 & 4)
+        self.ball = Ball(140, 88)
+        
+        self.paddle_h = 30 if self.nb_players_pong == 2 else 20
+        self.paddle_w = 4
+        
+        # Raquettes équipe Gauche
+        self.p1_paddle = [10, 40, self.paddle_w, self.paddle_h]
+        self.p3_paddle = [10, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
+        
+        # Raquettes équipe Droite
+        self.p2_paddle = [266, 40, self.paddle_w, self.paddle_h]
+        self.p4_paddle = [266, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
 
     def update_pong(self):
         # --- SÉCURITÉ & RETOUR ---
