@@ -824,13 +824,13 @@ class Game:
                             self.state = "end"
                             self.restart_cooldown.restart() # On démarre le chrono de 2s
 
-                    # ÉTAT FINAL (Affichage du gagnant)
-                    else:
-                        # On ne peut redémarrer que si le timer de 2 secondes est fini
-                        if self.restart_cooldown.get_timer() <= 0:
-                            _, p1_data = get_player_data("PLAYER-1")
-                            if p1_data and p1_data['buttons']['Press']:
-                                self.west_act()
+                        # ÉTAT FINAL (Affichage du gagnant)
+                        else:
+                            # On ne peut redémarrer que si le timer de 2 secondes est fini
+                            if self.restart_cooldown.get_timer() <= 0:
+                                _, p1_data = get_player_data("PLAYER-1")
+                                if p1_data and p1_data['buttons']['Press']:
+                                    self.west_act()
 
 
     def draw_west(self):
