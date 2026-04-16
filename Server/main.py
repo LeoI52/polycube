@@ -519,78 +519,153 @@ class Game:
     #? ---------- PONG ---------- ?#
 
     def pong_act(self):
-        # SECURITÉ : Vérifier si au moins 2 joueurs sont connectés
-        if server.occupied_slots[1] and server.occupied_slots[2]:
+        # Compte le nombre de joueurs connectés
+        nb_players = sum(1 for slot in server.occupied_slots.values() if slot)
+        
+        # Sécurité : Autoriser seulement si 2 ou 4 joueurs
+        if nb_players == 2 or nb_players == 4:
             if gpio_manager: gpio_manager.blink_start_sequence()
+            self.nb_players_pong = nb_players # On stocke pour savoir quel mode jouer
             self.init_pong()
             self.pyxel_manager.change_scene_transition(TransitonPixelate(3, 2, 8, 18))
-        elif gpio_manager:
-            gpio_manager.red_start_sequence()
+        else:
+            if gpio_manager:
+                gpio_manager.red_start_sequence()
 
-    def init_pong(self):
-        self.score_p1 = 0
-        self.score_p2 = 0
-        self.ball = Ball(140, 88)
-        # Raquettes : [x, y, w, h]
-        self.paddle_h = 30
-        self.paddle_w = 4
-        self.p1_paddle = [10, 88 - self.paddle_h // 2, self.paddle_w, self.paddle_h]
-        self.p2_paddle = [270 - self.paddle_w, 88 - self.paddle_h // 2, self.paddle_w, self.paddle_h]
+def init_pong(self):
+    self.vies_p1 = 3
+    self.vies_p2 = 3
+    self.pong_timer = CountdownTimer(90) # 90 secondes = 1min 30
+    self.ball = Ball(140, 88)
+    self.paddle_h = 25
+    self.paddle_w = 4
+
+
+
+    self.score_p1 = 0 # Équipe Gauche (Joueurs 1 & 3)
+    self.score_p2 = 0 # Équipe Droite (Joueurs 2 & 4)
+    self.ball = Ball(140, 88)
+    
+    self.paddle_h = 30 if self.nb_players_pong == 2 else 20
+    self.paddle_w = 4
+    
+    # Raquettes équipe Gauche
+    self.p1_paddle = [10, 40, self.paddle_w, self.paddle_h]
+    self.p3_paddle = [10, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
+    
+    # Raquettes équipe Droite
+    self.p2_paddle = [266, 40, self.paddle_w, self.paddle_h]
+    self.p4_paddle = [266, 100, self.paddle_w, self.paddle_h] if self.nb_players_pong == 4 else None
 
     def update_pong(self):
-        # Bouton retour menu
+        # --- SÉCURITÉ & RETOUR ---
         try:
             gpio_manager.bouton.when_pressed = lambda : self.pyxel_manager.change_scene_transition(TransitonPixelate(0, 2, 8, 18))
         except:
             pass
 
-        # Récupération données joueurs
-        _, p1_data = get_player_data("PLAYER-1")
-        _, p2_data = get_player_data("PLAYER-2")
+        # --- GESTION DU TIMER & FIN DE PARTIE ---
+        # Si le temps est écoulé ou qu'une équipe est à 0 vie
+        if self.pong_timer.get_timer() <= 0 or self.vies_p1 <= 0 or self.vies_p2 <= 0:
+            _, p1_data = get_player_data("PLAYER-1")
+            if p1_data and p1_data['buttons']['Press']:
+                self.pong_act() # Relancer la partie
+            return
 
-        # Mouvement Raquettes (basé sur l'accéléromètre Y)
-        if p1_data:
-            self.p1_paddle[1] = clamp(self.p1_paddle[1] + p1_data['sensors']['accel']['y'] * 2, 0, 176 - self.paddle_h)
-        if p2_data:
-            self.p2_paddle[1] = clamp(self.p2_paddle[1] + p2_data['sensors']['accel']['y'] * 2, 0, 176 - self.paddle_h)
+        # --- RÉCUPÉRATION DES DONNÉES ---
+        _, p1 = get_player_data("PLAYER-1")
+        _, p2 = get_player_data("PLAYER-2")
+        _, p3 = get_player_data("PLAYER-3")
+        _, p4 = get_player_data("PLAYER-4")
 
+        # --- MOUVEMENTS ÉQUIPE GAUCHE (1 & 3) ---
+        if p1:
+            self.p1_paddle[1] = clamp(self.p1_paddle[1] + p1['sensors']['accel']['y'] * 2.5, 0, 176 - self.paddle_h)
+        if self.nb_players_pong == 4 and p3:
+            self.p3_paddle[1] = clamp(self.p3_paddle[1] + p3['sensors']['accel']['y'] * 2.5, 0, 176 - self.paddle_h)
+
+        # --- MOUVEMENTS ÉQUIPE DROITE (2 & 4) ---
+        if p2:
+            self.p2_paddle[1] = clamp(self.p2_paddle[1] + p2['sensors']['accel']['y'] * 2.5, 0, 176 - self.paddle_h)
+        if self.nb_players_pong == 4 and p4:
+            self.p4_paddle[1] = clamp(self.p4_paddle[1] + p4['sensors']['accel']['y'] * 2.5, 0, 176 - self.paddle_h)
+
+        # --- PHYSIQUE DE LA BALLE ---
         self.ball.update()
 
-        # Collisions Raquettes
-        if collision_rect_rect(self.ball.x, self.ball.y, self.ball.w, self.ball.h, *self.p1_paddle):
-            self.ball.vx = abs(self.ball.vx) + 0.2 # On accélère un peu
+        # --- COLLISIONS GAUCHE ---
+        hit_left = collision_rect_rect(self.ball.x, self.ball.y, 4, 4, *self.p1_paddle)
+        if self.nb_players_pong == 4:
+            hit_left = hit_left or collision_rect_rect(self.ball.x, self.ball.y, 4, 4, *self.p3_paddle)
+        
+        if hit_left:
+            self.ball.vx = abs(self.ball.vx) + 0.2
             self.ball.x = self.p1_paddle[0] + self.p1_paddle[2]
             vibrate_controller("PLAYER-1", 30)
+            if self.nb_players_pong == 4: vibrate_controller("PLAYER-3", 30)
 
-        if collision_rect_rect(self.ball.x, self.ball.y, self.ball.w, self.ball.h, *self.p2_paddle):
+        # --- COLLISIONS DROITE ---
+        hit_right = collision_rect_rect(self.ball.x, self.ball.y, 4, 4, *self.p2_paddle)
+        if self.nb_players_pong == 4:
+            hit_right = hit_right or collision_rect_rect(self.ball.x, self.ball.y, 4, 4, *self.p4_paddle)
+
+        if hit_right:
             self.ball.vx = -abs(self.ball.vx) - 0.2
             self.ball.x = self.p2_paddle[0] - self.ball.w
             vibrate_controller("PLAYER-2", 30)
+            if self.nb_players_pong == 4: vibrate_controller("PLAYER-4", 30)
 
-        # Points
+        # --- SCORE & VIES ---
         if self.ball.x < 0:
-            self.score_p2 += 1
+            self.vies_p1 -= 1
             self.ball.reset()
+            gpio_manager.red_start_sequence() # Feedback visuel erreur
         elif self.ball.x > 280:
-            self.score_p1 += 1
+            self.vies_p2 -= 1
             self.ball.reset()
+            gpio_manager.red_start_sequence()
 
     def draw_pong(self):
         pyxel.cls(0)
+
+        # --- DÉCOR & UI ---
         # Ligne centrale
         for i in range(0, 176, 10):
             pyxel.rect(139, i, 2, 5, 23)
 
-        # Raquettes
-        pyxel.rect(*self.p1_paddle, 11)
-        pyxel.rect(*self.p2_paddle, 11)
+        # Affichage du Timer (90s = 1min 30)
+        self.pong_timer.draw(140, 5, 7, 1, CENTER)
 
-        # Balle
+        # Affichage des Vies (Coeurs ou texte)
+        pyxel.text(50, 10, f"VIES: {self.vies_p1}", 8 if self.vies_p1 > 1 else 26)
+        pyxel.text(210, 10, f"VIES: {self.vies_p2}", 8 if self.vies_p2 > 1 else 26)
+
+        # --- DESSIN DES RAQUETTES ---
+        # Équipe Gauche
+        pyxel.rect(*self.p1_paddle, 11) # Bleu Joueur 1
+        if self.nb_players_pong == 4:
+            pyxel.rect(*self.p3_paddle, 13) # Autre couleur Joueur 3
+
+        # Équipe Droite
+        pyxel.rect(*self.p2_paddle, 11) # Bleu Joueur 2
+        if self.nb_players_pong == 4:
+            pyxel.rect(*self.p4_paddle, 14) # Autre couleur Joueur 4
+
+        # --- BALLE ---
         self.ball.draw()
 
-        # Scores
-        pyxel.text(100, 10, str(self.score_p1), 7)
-        pyxel.text(175, 10, str(self.score_p2), 7)
+        # --- ÉCRAN DE FIN ---
+        if self.pong_timer.get_timer() <= 0 or self.vies_p1 <= 0 or self.vies_p2 <= 0:
+            pyxel.rect(70, 70, 140, 40, 0)
+            pyxel.rectb(70, 70, 140, 40, 7)
+            
+            winner = ""
+            if self.vies_p1 <= 0: winner = "EQUIPE DROITE GAGNE !"
+            elif self.vies_p2 <= 0: winner = "EQUIPE GAUCHE GAGNE !"
+            else: winner = "FIN DU TEMPS !"
+            
+            pyxel.text(140 - (len(winner)*2), 80, winner, 7)
+            pyxel.text(100, 95, "PRESS P1 BUTTON TO RESTART", 6)
 
     #? ---------- MAIN MENU ---------- ?#
 
