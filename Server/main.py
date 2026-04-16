@@ -538,7 +538,7 @@ class Game:
         self.pong_timer = CountdownTimer(90) # 90 secondes = 1min 30
         self.ball = Ball(140, 88)
         self.paddle_h = 25
-            self.paddle_w = 4
+        self.paddle_w = 4
 
 
 
