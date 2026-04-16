@@ -800,38 +800,37 @@ class Game:
                 self.state = "shoot"
                 self.sound_manager.play("fire")
 
-            elif self.state == "shoot":
-                        if not self.p1_shot:
-                            _, p1_data = get_player_data("PLAYER-1")
-                            if p1_data and p1_data['buttons']['Press']:
-                                self.p1_shot = True
-                                self.p1_angle = (p1_data['sensors']['alpha'], p1_data['sensors']['beta'], p1_data['sensors']['gamma'])
-                                self.sound_manager.play("shoot")
-                                if not self.p2_shot:
-                                    self.first = 1
-                        
-                        if not self.p2_shot:
-                            _, p2_data = get_player_data("PLAYER-2")
-                            if p2_data and p2_data['buttons']['Press']:
-                                self.p2_shot = True
-                                self.p2_angle = (p2_data['sensors']['alpha'], p2_data['sensors']['beta'], p2_data['sensors']['gamma'])
-                                self.sound_manager.play("shoot")
-                                if not self.p1_shot:
-                                    self.first = 2
 
-                        # Quand le duel est fini, on lance le cooldown de restart
-                        if self.p1_shot and self.p2_shot:
-                            self.state = "end"
-                            self.restart_cooldown.restart() # On démarre le chrono de 2s
 
-                        # ÉTAT FINAL (Affichage du gagnant)
-                        else:
-                            # On ne peut redémarrer que si le timer de 2 secondes est fini
-                            if self.restart_cooldown.get_timer() <= 0:
-                                _, p1_data = get_player_data("PLAYER-1")
-                                if p1_data and p1_data['buttons']['Press']:
-                                    self.west_act()
+        elif self.state == "shoot":
+            if not self.p1_shot:
+                _, p1_data = get_player_data("PLAYER-1")
+                if p1_data and p1_data['buttons']['Press']:
+                    self.p1_shot = True
+                    self.p1_angle = (p1_data['sensors']['alpha'], p1_data['sensors']['beta'], p1_data['sensors']['gamma'])
+                    print("p1 : ", self.p1_angle)
+                    self.sound_manager.play("shoot")
+                    if not self.p2_shot:
+                        self.first = 1
 
+            if not self.p2_shot:
+                _, p2_data = get_player_data("PLAYER-2")
+                if p2_data and p2_data['buttons']['Press']:
+                    self.p2_shot = True
+                    self.p2_angle = (p2_data['sensors']['alpha'], p2_data['sensors']['beta'], p2_data['sensors']['gamma'])
+                    print("p2 : ", self.p2_angle)
+                    self.sound_manager.play("shoot")
+                    if not self.p1_shot:
+                        self.first = 2
+
+            if self.p1_shot and self.p2_shot:
+                self.state = "end"
+
+
+        else:
+            _, p1_data = get_player_data("PLAYER-1")
+            if p1_data and p1_data['buttons']['Press']:
+                self.west_act()
 
     def draw_west(self):
         pyxel.cls(0)
