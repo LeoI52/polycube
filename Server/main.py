@@ -477,6 +477,9 @@ class Game:
         self.particle_manager = ParticleManager()
         self.saka_play_timer = CountdownTimer(60)
 
+        #? Far Variables
+        self.restart_cooldown = CountdownTimer(3)
+
         #? Run
         self.pyxel_manager.run()
 
@@ -515,8 +518,6 @@ class Game:
         self.first = 0
         self.p1_angle = 0
         self.p2_angle = 0
-        self.restart_cooldown = CountdownTimer(3)
-
 
     #? ---------- PONG ---------- ?#
 
@@ -825,11 +826,12 @@ class Game:
 
             if self.p1_shot and self.p2_shot:
                 self.state = "end"
+                self.restart_cooldown.restart()
 
 
         else:
             _, p1_data = get_player_data("PLAYER-1")
-            if p1_data and p1_data['buttons']['Press']:
+            if p1_data and p1_data['buttons']['Press'] and self.restart_cooldown.get_timer() == 0:
                 self.west_act()
 
     def draw_west(self):
